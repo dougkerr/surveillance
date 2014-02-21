@@ -316,7 +316,7 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
                 % (path2dir(daydirs[day_index+1]), cam.shortname)
     else:
         navigational_html += \
-                """<font color="grey"><-- Previous day</a>&nbsp;&nbsp; """
+                """<font color="grey"><-- Previous day</font>&nbsp;&nbsp; """
     navigational_html += """<a href="%s">UP</a>"""  % (daylisturlfromindex("index"))
     if day_index > 0 : 
         navigational_html += """ &nbsp;&nbsp;<a href="../../%s/%s/">Next day --></a>""" % (path2dir(daydirs[day_index-1]), cam.shortname)

@@ -30,6 +30,7 @@ import os
 import shutil
 import inspect
 import datetime
+from HTMLParser import HTMLParser
 
 moduleUnderTest = surveillance
 
@@ -159,8 +160,9 @@ def validateWebsite(image_tree):
     if len(rootdirlist) > len(image_tree)+1:
         success = False
         logging.error("Extraneous file(s) in %s: %s" % (root, rootdirlist))
-        
-    for (date,camlist) in image_tree:
+    
+    for dayindex in range(0, len(image_tree)):
+        (date, camlist) = image_tree[dayindex]
         datepath = os.path.join(root, date)
         if not os.path.isdir(datepath):
             success = False
@@ -171,7 +173,8 @@ def validateWebsite(image_tree):
             success = False
             logging.error("Extraneous file(s) in %s: %s" % (datepath, datedirlist))
             
-        for (cam, imagelist) in camlist:
+        for camindex in range(0, len(camlist)):
+            (cam, imagelist) = camlist[camindex]
             campath = os.path.join(datepath, cam)
             if not os.path.isdir(campath):
                 success = False
@@ -189,6 +192,8 @@ def validateWebsite(image_tree):
             if not file_has_data(filepath):
                 success = False
                 logging.error("Missing or zero length website file: %s" % filepath)
+            if not validate_prev_next_day_links(filepath, image_tree, dayindex, camindex):
+                success = False
                
             # check for index_hidden.html
             filepath = os.path.join(campath, "index_hidden.html")
@@ -222,6 +227,76 @@ def validateWebsite(image_tree):
 
     return success
 
+class SurvHTMLParser(HTMLParser):
+    """Parses the HTML fed to feed(), and produces a list of HTML elements
+    returned by getResult():
+    - For each start tag: [ tagname, attributes ] where attributes is a list
+    of zero or more tuples of the form [ (attribute_name, value), ... ]
+    - For each end tag: [ "/"+tagname ]
+    - For each string of data in between tags: [ "-data", data_string ]
+    """
+    def reset(self):
+        self.result = []
+        HTMLParser.reset(self)
+    def handle_starttag(self, tag, attrs):
+        self.result.append([tag, attrs])
+    def handle_endtag(self, tag):
+        self.result.append(["/"+tag])
+    def handle_data(self, data):
+        # parser handles "<" as a single data element so if the data is, e.g.,
+        # "<-- Previous day", handle_data is called with "<" by itself,
+        # then called again with the rest of the data. Collapse this into
+        # one data element
+        if self.result[-1][0] == "-data":
+            self.result[-1][1] += data
+        else:
+            self.result.append(["-data", data])
+    def get_result(self):
+        return self.result
+
+def validate_prev_next_day_links(filepath, image_tree, dayindex, camindex):
+    success = True
+    p = SurvHTMLParser()
+    f = open(filepath)
+    html = f.read()
+    print "length of data read: ", len(html)
+    p.feed(html)
+    f.close
+    items = p.get_result()
+    
+#     print "HTML result: %d items:" % len(items)
+#     for it in items:
+#         print it
+        
+    prevct = 0
+    nextct = 0
+    for i in range(0, len(items)):
+        if items[i][0] == "-data" and items[i][1] == "<-- Previous day":
+            prevct += 1
+            tag = items[i-1]
+            if dayindex == 0:
+                if tag[0] != "font":
+                    logging.error("Previous day link not grayed out: "+filepath)
+                    success = False
+            else:                
+                if tag[0] != "a" or tag[1][0][0] != "href":
+                    logging.error("Previous day should be a link: "+filepath)
+                    #logging.error("tag[0] = "+repr(tag[0])+", tag[1][0] = "+repr(tag[1][0]))
+                    success = False
+                else:
+                    # build linkpath from prev day's date and camera name
+                    linkpath = "../../" + image_tree[dayindex-1][0] \
+                            + "/" + image_tree[dayindex-1][1][camindex][0] + "/"
+                    if tag[1][0][1] != linkpath:
+                        logging.error("""Previous day link in %s points to "%s", expected "%s" """
+                                      % (filepath, tag[1][0][1], linkpath))
+                        success = False
+    if prevct != 2:
+        success = False
+        logging.error("""Day link validation: saw %d "Previous day" link(s), should be 2."""
+                       % prevct)
+    return success
+                    
 class TestSurveilleance(unittest.TestCase):
 
     origThreadList = threading.enumerate()
@@ -261,6 +336,7 @@ class TestSurveilleance(unittest.TestCase):
         pass
     
     def test00CropFail(self):
+        logging.info("========== %s" % inspect.stack()[0][3])
         # make the dirs
         cam = moduleUnderTest.cameras[0]
         indir = os.path.join(moduleUnderTest.root, "2013-07-01", cam.shortname)
@@ -316,7 +392,7 @@ class TestSurveilleance(unittest.TestCase):
         #f.close()
         assert validateWebsite(tree)
 
-    def test02NewImagesToProcess(self):
+    def Xtest02NewImagesToProcess(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
@@ -329,7 +405,7 @@ class TestSurveilleance(unittest.TestCase):
         
         assert validateWebsite(tree)
 
-    def test03NewAndOldImagesToProcess(self):
+    def Xtest03NewAndOldImagesToProcess(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
@@ -350,7 +426,7 @@ class TestSurveilleance(unittest.TestCase):
         
         assert validateWebsite(tree)
         
-    def test04Purge(self):
+    def Xtest04Purge(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
