@@ -255,46 +255,77 @@ class SurvHTMLParser(HTMLParser):
         return self.result
 
 def validate_prev_next_day_links(filepath, image_tree, dayindex, camindex):
+    # tables of values for Previous/Next testing
+    pntab = (
+                "<-- Previous day",
+                "Next day -->"
+                )
+    linkct = [0, 0]     # table of link counts
+    PREV = 0
+    NEXT = 1
+    
     success = True
+    
+    # parse the HTML from filepath
     p = SurvHTMLParser()
     f = open(filepath)
     html = f.read()
-    print "length of data read: ", len(html)
     p.feed(html)
     f.close
     items = p.get_result()
     
-#     print "HTML result: %d items:" % len(items)
-#     for it in items:
-#         print it
-        
-    prevct = 0
-    nextct = 0
+    # scan through the HTML elements looking for "Previous day" or "Next day"
+    # data strings
     for i in range(0, len(items)):
-        if items[i][0] == "-data" and items[i][1] == "<-- Previous day":
-            prevct += 1
+        if items[i][0] == "-data":
+            pn = None
+            for j in range(0, len(pntab)):
+                if items[i][1] == pntab[j]:
+                    pn = j
+            if pn == None:
+                continue
+            
+            linkct[pn] += 1     # count the number of Previous or Next day links
+            
+            # if a Previous day string is found, and we're on the earliest page,
+            # or if a Next day string is found and we're on the latest page,
+            # fail if the string is not grayed out
             tag = items[i-1]
-            if dayindex == 0:
+            if      pn == PREV and dayindex == 0 or \
+                    pn == NEXT and dayindex == len(image_tree)-1:
                 if tag[0] != "font":
-                    logging.error("Previous day link not grayed out: "+filepath)
                     success = False
+                    logging.error("\"%s\" link not grayed out: %s"
+                                   % (pntab[pn],filepath))
+            # if it's a Previous or Next day string on another page,
+            # fail if the string is not a link
             else:                
                 if tag[0] != "a" or tag[1][0][0] != "href":
-                    logging.error("Previous day should be a link: "+filepath)
-                    #logging.error("tag[0] = "+repr(tag[0])+", tag[1][0] = "+repr(tag[1][0]))
                     success = False
+                    logging.error("\"%s\" should be a link: %s" 
+                                  % (pntab[pn], filepath))
+                # if the string is a link, fail if it doesn't point to the
+                # right page
                 else:
-                    # build linkpath from prev day's date and camera name
-                    linkpath = "../../" + image_tree[dayindex-1][0] \
-                            + "/" + image_tree[dayindex-1][1][camindex][0] + "/"
+                    # build linkpath from prev/next day's date and camera name
+                    delta = -1 if pn == PREV else 1
+                    linkpath = "../../" + image_tree[dayindex+delta][0] \
+                            + "/" + image_tree[dayindex+delta][1][camindex][0] \
+                            + "/"
                     if tag[1][0][1] != linkpath:
-                        logging.error("""Previous day link in %s points to "%s", expected "%s" """
-                                      % (filepath, tag[1][0][1], linkpath))
                         success = False
-    if prevct != 2:
-        success = False
-        logging.error("""Day link validation: saw %d "Previous day" link(s), should be 2."""
-                       % prevct)
+                        logging.error(("\"%s\" link in %s points to \"%s\", "
+                                      + "expected \"%s\"") % 
+                                      (pntab[pn], filepath, tag[1][0][1],
+                                         linkpath))
+
+    # fail if there are not two each of the Previous and Next day strings
+    for pn in range(0, len(linkct)):
+        if linkct[pn] != 2:
+            success = False
+            logging.error("Day link validation: saw %d \"%s\" link(s), should be 2."
+                           % (linkct[pn], pntab[pn]))
+            
     return success
                     
 class TestSurveilleance(unittest.TestCase):
@@ -392,7 +423,7 @@ class TestSurveilleance(unittest.TestCase):
         #f.close()
         assert validateWebsite(tree)
 
-    def Xtest02NewImagesToProcess(self):
+    def test02NewImagesToProcess(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
@@ -405,7 +436,7 @@ class TestSurveilleance(unittest.TestCase):
         
         assert validateWebsite(tree)
 
-    def Xtest03NewAndOldImagesToProcess(self):
+    def test03NewAndOldImagesToProcess(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
@@ -426,7 +457,7 @@ class TestSurveilleance(unittest.TestCase):
         
         assert validateWebsite(tree)
         
-    def Xtest04Purge(self):
+    def test04Purge(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.root, "2013-07-01", "camera1", "12-00-00", 1, 10)
