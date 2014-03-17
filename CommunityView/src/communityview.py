@@ -55,7 +55,7 @@ delete=True
 
 thumbsize =(128,128)
 mediumsize = (800,600)
-title = "Neighborhood Guard Security Camera System"
+title = "Neighborhood Guard CommunityView"
 footer = "Software Copyright (c) 2012-2014  Neighborhood Guard, Inc. All rights reserved."
 
 
