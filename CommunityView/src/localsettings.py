@@ -48,14 +48,25 @@ cameras = [
     ]
 
 
-##################################################################################
-#                                                                                #
-#   Root is the location of the uploaded images as seen on the web-server        #
-#                                                                                #
-#                                                                                #
-##################################################################################
+################################################################################
+#
+# incrootpath is the full pathname of the root of the directory structure for
+#   incoming images.  This directory will contain "date" directories
+#   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
+#   images
+#
+# webrootpath is the full pathname of the root directory for the generated
+#   website
+#
+################################################################################
 		
-root = "/home/example_user/upload_directory/"
+incrootpath = "/home/example_user/upload_directory/"
+webrootpath = "/home/example_user/website_directory"
+
+# s3 settings
+s3_host = "s3.amazonaws.com"
+s3_webfs_bucket = "communityview.testing"
+s3_reduced_redundancy = True
 
 retain_days = 30 # number of days to retain images.
 hide_sequences_shorter_than_sec = 1 # Sequences lenght 0 sec are hidden

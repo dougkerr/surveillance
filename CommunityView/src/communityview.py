@@ -26,7 +26,7 @@
 #                                                                              #
 ################################################################################
 
-version_string = "0.9.4"
+version_string = "0.9.4s3hack"
 
 
 import os
@@ -34,12 +34,13 @@ import Image
 import ImageChops
 import ImageOps
 import ImageDraw
-import shutil
+#import shutil
 import datetime
 import re
 import threading
 import time
 import logging.handlers
+import webfs
 
 from localsettings import * #@UnusedWildImport (Camera)
 
@@ -94,7 +95,14 @@ def hirespath(indir, filename):
 def htmlpath(indir, filename):
     return os.path.join(indir, htmldir, os.path.splitext(filename.strip())[0] + html_postfix)
 
-
+# s3: given the full path of a file or directory in the incoming file tree,
+# return the full path of the corresponding file or directory in the website
+# file tree
+#
+def inc_to_web_path(incpath):
+    rp = os.path.relpath(incpath, incrootpath)
+    return webfs.path_join(webrootpath, rp)
+    
 def indexhtmlpath(indir, filename):
     return os.path.join(indir, os.path.splitext(filename.strip())[0] + html_postfix)
 
@@ -119,7 +127,7 @@ def thumburlfromindex(filename):
     return thumbdir +"/" + os.path.splitext(filename.strip())[0] + thumb_postfix
 
 def daylisthtmlpath(filename):
-    return os.path.join(root, os.path.splitext(filename.strip())[0] + html_postfix)
+    return os.path.join(webrootpath, os.path.splitext(filename.strip())[0] + html_postfix)
 
 def daylisturlfromindex(filename):
     return os.path.join("../..", os.path.splitext(filename.strip())[0] + html_postfix)
@@ -157,7 +165,7 @@ def crop_image(img, croparea):
 
     return cropped_image
 
-
+# s3: done
 def processImage(indir, filename, cam, master_image=None):
     global images_to_process
     logging.info("Starting processImage()")
@@ -168,8 +176,8 @@ def processImage(indir, filename, cam, master_image=None):
         mediumpathfilename = mediumpath(indir, filename)
         logging.info("Processing %s" % (infilepathfilename))
     
-        thumbexists = os.path.exists(thumbpathfilename)
-        mediumexists = os.path.exists(mediumpathfilename)
+        thumbexists = webfs.path_isfile(inc_to_web_path(thumbpathfilename))
+        mediumexists = webfs.path_isfile(inc_to_web_path(mediumpathfilename))
     
         cropped_img = None
     
@@ -205,6 +213,8 @@ def processImage(indir, filename, cam, master_image=None):
                 cropped_img.thumbnail(mediumsize, Image.ANTIALIAS)
                 try :
                     cropped_img.save(mediumpathfilename, "JPEG")
+                    webfs.move_to_web(mediumpathfilename, 
+                                      inc_to_web_path(mediumpathfilename))
                 except IOError:
                     logging.error("Cannot save mediumres image %s" % mediumpathfilename)
     
@@ -222,6 +232,8 @@ def processImage(indir, filename, cam, master_image=None):
                         ImageDraw.Draw(cropped_img).rectangle(rect, outline="yellow", fill=None)
                 try :
                     cropped_img.save(thumbpathfilename, "JPEG")
+                    webfs.move_to_web(thumbpathfilename, 
+                                      inc_to_web_path(thumbpathfilename))
                 except IOError:
                     logging.error("Cannot save thumbnail %s" % thumbpathfilename)
     
@@ -230,7 +242,8 @@ def processImage(indir, filename, cam, master_image=None):
         infilepathfilename = inpath(indir, filename)
         hirespathfilename = hirespath(indir, filename)
         
-        shutil.move(infilepathfilename,hirespathfilename)
+        webfs.move_to_web(infilepathfilename,
+                          inc_to_web_path(hirespathfilename))
     except Exception, e:
         logging.error("Unexpected exception in processImage()")
         logging.exception(e)
@@ -254,7 +267,9 @@ def processImage_threading(indir, filename, cam, master_image=None):
         image_thread.start()
 
 
-
+# make the index page for a single day
+# s3: done
+#
 def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False):
 
     # Index page HIDES hidden images. Hidden = False
@@ -348,11 +363,18 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
     
     htmlfile.write(htmlstring)
     htmlfile.close()
-
+    
+    # hack for s3
+    webfs.mkdir(inc_to_web_path(indir))    
+    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
+    
     return
 
-
-
+# make the html file for the image in sequences indicated by
+# sequences[sequence_index][image_index]. indir is the full path of the datecam
+# dir
+#
+# s3: done
 def make_image_html(indir, sequences, sequence_index, image_index):
     sequence = sequences[sequence_index]
     (filename, timestamp) = sequence[image_index]
@@ -462,10 +484,21 @@ def make_image_html(indir, sequences, sequence_index, image_index):
 
     htmlfile.write(htmlstring)
     htmlfile.close()
+    
+    # s3 hack
+    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
 
     return
 
-
+# create the html file for each image in the sequence indicated by
+# sequence_index, and also generate the thumbnails and medium res images for
+# incoming images that have not yet been processed. indir is the full pathname
+# of the datecam dir containing the incoming jpegs.  Each sequence in the list
+# of sequences is a list of (jpeg_filename, timestamp) tuples.  Each filename
+# must be in exactly one of either the incoming datecam dir, or in the website
+# datecam dir.
+#
+# s3: done
 def process_sequence(indir, sequences, cam, sequence_index):
         
     logging.info("next_sequence")
@@ -481,6 +514,9 @@ def process_sequence(indir, sequences, cam, sequence_index):
 #         next_sequence = None
 
 
+    # assume the last image file in the sequence is the cleanest
+    # and use it if it's still in incoming datecam dir
+    # (but if it's not?  XXX may be a bug, though minor)
     if os.path.exists(inpath(indir,sequence[-1][0])):
         cleanest_thumbnail = processImage(indir, sequence[-1][0], cam)
     else:
@@ -541,10 +577,15 @@ def make_subdirs(indir):
     mkdir(os.path.join(indir, mediumresdir))
     mkdir(os.path.join(indir, hiresdir))
     mkdir(os.path.join(indir, htmldir))
+    
+# s3: done
+def make_websubdirs(webdir):
+    webfs.mkdir(webfs.path_join(webdir, thumbdir))
+    webfs.mkdir(webfs.path_join(webdir, mediumresdir))
+    webfs.mkdir(webfs.path_join(webdir, hiresdir))
+    webfs.mkdir(webfs.path_join(webdir, htmldir))
 
-    return
-
-
+# s3: no interaction with any filesystem
 def sequence_dirlist(files, indir, last_processed_image):
     logging.info("sequencing dirlist for %s" % indir)
     (processingyear,processingmonth, processingday) = dir2date(indir)
@@ -594,7 +635,24 @@ def get_images_in_dir(indir):
         images=sorted(images)
     return images
 
+# mimic get_images_in_dir() above, but for images in a website directory
+#
+def get_images_in_web_dir(webpath):
+    images = []
 
+    logging.info("loading web dirlist for %s" % webpath)
+    origfiles = webfs.listdir(webpath)
+
+    for origfile in origfiles:
+        if origfile.lower().endswith(".jpg"):
+            images.append(origfile)
+
+    logging.info("sorting web dirlist for %s" % webpath)
+    images=sorted(images)
+    return images
+
+
+# s3: done
 def make_sequence_and_last_processed_image(indir):
 
     origfiles = get_images_in_dir(indir)
@@ -605,8 +663,7 @@ def make_sequence_and_last_processed_image(indir):
         last_processed_sequence = None
     else:
         hiresdirpath = hirespath(indir, "")    
-        hiresfiles = get_images_in_dir(hiresdirpath)
-
+        hiresfiles = get_images_in_web_dir(inc_to_web_path(hiresdirpath))
 
         # find first unprocessed image in orig.
         if len(origfiles) > 0 :
@@ -635,12 +692,14 @@ def make_sequence_and_last_processed_image(indir):
     return (sequences, last_processed_sequence)
 
 
+# s3: done
 def process_day(daysdirs, day_index):
 
     for cam in cameras:
         daydir = daysdirs[day_index]
 
         indir = os.path.join(daydir, cam.shortname)
+        webdirpath = inc_to_web_path(indir)
     
         if os.path.isdir(indir):
 
@@ -649,6 +708,8 @@ def process_day(daysdirs, day_index):
             logging.info("Date %s, %s, %s" % (processingyear, processingmonth, processingday))
 
             make_subdirs(indir)
+            webfs.mkdir(webdirpath)
+            make_websubdirs(webdirpath)
 
             (sequences, last_processed_sequence) = make_sequence_and_last_processed_image(indir)
             if sequences != None:
@@ -687,13 +748,21 @@ def deltree(deldir):
     return
 
 
+# returns a list of the incoming date directory pathnames.
+#
+# S3: Note that this is different from the original non-s3 code in which the
+# incoming and web date directories were the same.  This function does not
+# include any web date directories that don't happen to have corresponding
+# incoming directories. Therefore, the incoming date directories MUST be a
+# superset of the website date directories so that all the dates get processed
+#
 def get_daydirs():        
-    daydirlist = os.listdir(root)
+    daydirlist = os.listdir(webrootpath)
 
     daydirs=[]
     for direc in daydirlist:
         (year, unused_month, unused_day) = dir2date(direc)
-        dirpath = os.path.join(root, direc)
+        dirpath = os.path.join(webrootpath, direc)
         if os.path.isdir(dirpath) and year != None:
             daydirs.append(dirpath)
     daydirs = sorted(daydirs)
@@ -758,7 +827,8 @@ def processtoday(daysdirs):
     logging.info("returning from processtoday()")
     return
 
-
+# makes the single, top-level page that lists the days for which we have images
+#
 def make_day_list_html(daydirs):
 
     logging.info("Making daylist Index page")
@@ -835,7 +905,9 @@ images_to_process = False
 #
 files_to_purge = False
 
+webfs_module_name = "webfs_s3"  # in a global so test code can change it
 
+# s3: in progress (done except for purge)
 def main():
     
     global images_to_process
@@ -845,6 +917,8 @@ def main():
     logging.info("Program Started, version %s", version_string)
 
     try:
+        webfs.initialize(webfs_module_name)
+        
         # Setup the threads, don't actually run them yet.
         process_previous_days_thread = threading.Thread(target=process_previous_days, args=())
         processtoday_thread = threading.Thread(target=processtoday, args=())
@@ -858,6 +932,7 @@ def main():
     
             files_to_purge = len(daydirs) > retain_days
             
+            # s3 XXX need to map daydirs paths from input to s3
             if len(daydirs) > retain_days:
                 if not purge_thread.is_alive():
                     purge_thread = threading.Thread(target=purge_images, args=(daydirs[:-retain_days],))

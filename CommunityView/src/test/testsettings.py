@@ -53,8 +53,30 @@ cameras = [
 #                                                                                #
 #   Root is the location of the uploaded images as seen on the web-server        #
 #                                                                                #
-#                                                                                #
 ##################################################################################
         
 root = "c:/survtesting"
+
+################################################################################
+# 
+#   S3 settings
+#
+################################################################################
+
+# S3 webfs config
+#
+s3_host = "s3.amazonaws.com"
+s3_webfs_bucket = "communityview.testing"
+# NOTE: the bucket location needs to be a region with read-after-write
+# consistency for the tests to work correctly.  For AWS, this means any
+# region other than US Standard.  See: 
+# http://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html#ConsistencyMode
+s3_location = "us-west-1"
+s3_reduced_redundancy = True
+
+# place to put temp files during testing
+#
+tempdir = "C:\\cvtesting\\temp"
+
+
 
