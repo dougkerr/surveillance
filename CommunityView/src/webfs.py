@@ -1,7 +1,8 @@
 # the webfs_* imports are marked as unused because the proper module is not
 # selected until runtime in the initialize() function
 #
-import webfs_s3  # @UnusedImport
+import webfs_s3     # @UnusedImport
+import webfs_local  # @UnusedImport
 
 #
 # this is the webfs "filesystem switch."  A call to initialize() points the
@@ -64,7 +65,7 @@ def move_to_web(src_path, dest_path):
 #
 def path_isfile(filepath):
     _chkwfs()
-    return wfs.path_isfile()
+    return wfs.path_isfile(filepath)
 
 # join pathname components specified by one or more string arguments according
 # to the rules for the selected filesystem

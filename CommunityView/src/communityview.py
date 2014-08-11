@@ -699,7 +699,6 @@ def process_day(daysdirs, day_index):
         daydir = daysdirs[day_index]
 
         indir = os.path.join(daydir, cam.shortname)
-        webdirpath = inc_to_web_path(indir)
     
         if os.path.isdir(indir):
 
@@ -708,6 +707,10 @@ def process_day(daysdirs, day_index):
             logging.info("Date %s, %s, %s" % (processingyear, processingmonth, processingday))
 
             make_subdirs(indir)
+            
+            # s3: set up web date, cam & sub- directories
+            webfs.mkdir(inc_to_web_path(daydir))
+            webdirpath = inc_to_web_path(indir)
             webfs.mkdir(webdirpath)
             make_websubdirs(webdirpath)
 
@@ -757,12 +760,12 @@ def deltree(deldir):
 # superset of the website date directories so that all the dates get processed
 #
 def get_daydirs():        
-    daydirlist = os.listdir(webrootpath)
+    daydirlist = os.listdir(incrootpath)
 
     daydirs=[]
     for direc in daydirlist:
         (year, unused_month, unused_day) = dir2date(direc)
-        dirpath = os.path.join(webrootpath, direc)
+        dirpath = os.path.join(incrootpath, direc)
         if os.path.isdir(dirpath) and year != None:
             daydirs.append(dirpath)
     daydirs = sorted(daydirs)

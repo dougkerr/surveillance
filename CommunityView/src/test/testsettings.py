@@ -49,13 +49,20 @@ cameras = [
     ]
 
 
-##################################################################################
-#                                                                                #
-#   Root is the location of the uploaded images as seen on the web-server        #
-#                                                                                #
-##################################################################################
+################################################################################
+#
+# incrootpath is the full pathname of the root of the directory structure for
+#   incoming images.  This directory will contain "date" directories
+#   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
+#   images
+#
+# webrootpath is the full pathname of the root directory for the generated
+#   website
+#
+################################################################################
         
-root = "c:/survtesting"
+incrootpath = "c:/survtesting/inc"
+webrootpath = "c:/survtesting/web"
 
 ################################################################################
 # 
