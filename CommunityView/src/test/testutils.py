@@ -3,9 +3,9 @@
 #
 
 import os
-import testconfig
+import testsettings
 
 def get_temp_dir():
-    if not os.path.isdir(testconfig.tempdir):
-        os.makedirs(testconfig.tempdir)
-    return testconfig.tempdir
+    if not os.path.isdir(testsettings.tempdir):
+        os.makedirs(testsettings.tempdir)
+    return testsettings.tempdir

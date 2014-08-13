@@ -14,7 +14,8 @@ def initialize(host=localsettings.s3_host, bucket=localsettings.s3_webfs_bucket)
 # equivalent of os.listdir() for the given S3 bucket.
 # Returns a list of the files and "directories" in the "directory"
 # specified by path.  An empty path is explicitly disallowed, because there is
-# no concept of "current directory"
+# no concept of "current directory"  Since there are no actual directories in
+# S3, returns an empty list if the "directory" does not exist
 #
 def listdir(path):
     result = []
@@ -33,11 +34,11 @@ def listdir(path):
     # start with the same string as the "directory" name
     if len(path):
         if path[-1] != "/":
-            path.append("/")
+            path += "/"
         
     it = s3_bucket.list(prefix=path, delimiter="/")
-    for e in it:
-        n = e.name.encode("ascii")
+    for k in it:
+        n = k.name.encode("ascii")
         
         # remove trailing slash from "directory" names
         if n[-1]=='/':
@@ -111,4 +112,7 @@ def move_to_web(src_path, dest_path):
 
 # delete the tree of files rooted at path. Raise exception if deletion fails
 #
-#def rmtree(path):
+def rmtree(path):
+    it = s3_bucket.list(prefix=path)
+    for k in it:
+        k.delete()
