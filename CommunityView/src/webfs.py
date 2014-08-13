@@ -1,4 +1,4 @@
-# the webfs_* imports are marked as unused because the proper module is not
+# the webfs_* imports are marked as "unused" because the proper module is not
 # selected until runtime in the initialize() function
 #
 import webfs_s3     # @UnusedImport
@@ -74,4 +74,9 @@ def path_join(*args):
     _chkwfs()
     return wfs.path_join(*args)
 
+# delete the tree of files rooted at path. Raise exception if deletion fails
+#
+def rmtree(path):
+    _chkwfs()
+    return wfs.rmtree(path)
 

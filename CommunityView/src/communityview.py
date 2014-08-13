@@ -732,7 +732,6 @@ def process_day(daysdirs, day_index):
 
     return
 
-
 def deltree(deldir):
     logging.info("deltree: %s" % (deldir))
     files_to_be_deleted = sorted(os.listdir(deldir))
@@ -748,6 +747,10 @@ def deltree(deldir):
             else :
                 os.remove(filepath)
     rmdir(deldir)
+    # S3: remove S3 file tree after presumably successful removal of local
+    # incoming file tree
+    if delete:
+        webfs.rmtree(deldir)
     return
 
 

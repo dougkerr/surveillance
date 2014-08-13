@@ -362,7 +362,7 @@ class TestSurveilleance(unittest.TestCase):
         
         assert validateWebsite(tree)
         
-    def xtest04Purge(self):
+    def test04Purge(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
         buildImages(moduleUnderTest.incrootpath, "2013-07-01", "camera1", "12-00-00", 1, 10)

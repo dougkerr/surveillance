@@ -14,7 +14,6 @@ def listdir(path):
     # empty path not allowed
     if len(path) == 0:
         raise webfs.WebFSIOError("Empty path not allowed")
-
     return os.listdir(path)
 
 # create a directory. 
@@ -47,4 +46,10 @@ def path_isfile(filepath):
 #
 def path_join(*args):
     return os.path.join(*args)
+
+# delete the tree of files rooted at path. Raise exception if deletion fails
+#
+def rmtree(path):
+    shutil.rmtree(path)
+
 

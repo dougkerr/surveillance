@@ -28,7 +28,9 @@ def listdir(path):
     if path[0]=="/":
         path = path[1:]
         
-    # unless the path is empty (root), make sure it ends with a slash
+    # unless the path is empty (root), make sure it ends with a slash so we get
+    # only the "directory" we're looking for, and not some other objects that
+    # start with the same string as the "directory" name
     if len(path):
         if path[-1] != "/":
             path.append("/")
@@ -106,4 +108,7 @@ def move_to_web(src_path, dest_path):
         
     # remove src_path since this is a move
     os.remove(src_path)
-    
+
+# delete the tree of files rooted at path. Raise exception if deletion fails
+#
+#def rmtree(path):
