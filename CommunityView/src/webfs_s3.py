@@ -6,6 +6,11 @@ import webfs
 # the s3 bucket object containing the webfs files
 s3_bucket = ""
 
+# the credentials to access the S3 account used by this code are
+# expected to be handled externally.  For example, the access key ID and secret
+# access key might be in ~/.boto, or stored in the environment variables
+# AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+#
 def initialize(host=localsettings.s3_host, bucket=localsettings.s3_webfs_bucket):
     global s3_bucket
     conn = boto.connect_s3(host=host)

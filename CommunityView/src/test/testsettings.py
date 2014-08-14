@@ -72,8 +72,8 @@ webrootpath = "c:/survtesting/web"
 
 # S3 webfs config
 #
-s3_host = "s3.amazonaws.com"
-s3_webfs_bucket = "communityview.testing"
+s3_host = "objects.dreamhost.com"
+s3_webfs_bucket = "cv.test1"
 # NOTE: the bucket location needs to be a region with read-after-write
 # consistency for the tests to work correctly.  For AWS, this means any
 # region other than US Standard.  See: 

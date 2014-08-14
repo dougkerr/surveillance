@@ -64,8 +64,8 @@ incrootpath = "/home/example_user/upload_directory/"
 webrootpath = "/home/example_user/website_directory"
 
 # s3 settings
-s3_host = "s3.amazonaws.com"
-s3_webfs_bucket = "communityview.testing"
+s3_host = "objects.dreamhost.com"
+s3_webfs_bucket = "cv.test1"
 s3_reduced_redundancy = True
 
 retain_days = 30 # number of days to retain images.
