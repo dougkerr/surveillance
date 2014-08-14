@@ -47,8 +47,8 @@ class TestWebfs(unittest.TestCase):
         for key in test_bucket.list():
             key.delete()
         
-        webfs_s3.config.s3_host = testsettings.s3_host
-        webfs_s3.config.s3_webfs_bucket = testsettings.s3_webfs_bucket
+        webfs_s3.localsettings.s3_host = testsettings.s3_host
+        webfs_s3.localsettings.s3_webfs_bucket = testsettings.s3_webfs_bucket
  
         # now start the testing
         webfs.initialize("webfs_s3")
@@ -73,6 +73,8 @@ class TestWebfs(unittest.TestCase):
         if p != xpct:
             print "Joining %s: expected: %s, got: %s" % (str(args), xpct, p)
             assert False
-
+            
+    # XXX quick hack.  Depends on move_to_web test above
     def test050path_isfile(self):
-        assert False
+        assert webfs.path_isfile("image_testWebfs_move_to_web.jpg"), \
+                "path_isfile() failed to detect file"
