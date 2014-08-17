@@ -127,7 +127,7 @@ def thumburlfromindex(filename):
     return thumbdir +"/" + os.path.splitext(filename.strip())[0] + thumb_postfix
 
 def daylisthtmlpath(filename):
-    return os.path.join(webrootpath, os.path.splitext(filename.strip())[0] + html_postfix)
+    return os.path.join(incrootpath, os.path.splitext(filename.strip())[0] + html_postfix)
 
 def daylisturlfromindex(filename):
     return os.path.join("../..", os.path.splitext(filename.strip())[0] + html_postfix)
@@ -881,6 +881,8 @@ def make_day_list_html(daydirs):
 
     htmlfile.write(htmlstring)
     htmlfile.close()
+    
+    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
 
     return
 
