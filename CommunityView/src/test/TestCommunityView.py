@@ -95,8 +95,8 @@ def deleteTestFiles():
     top-level directory of the CommunityView website, and the
     top-level directory for incoming images.
     """
-    shutil.rmtree(moduleUnderTest.webrootpath, False, None)
-    os.mkdir(moduleUnderTest.webrootpath)
+    shutil.rmtree(moduleUnderTest.s3rootpath, False, None)
+    os.mkdir(moduleUnderTest.s3rootpath)
     shutil.rmtree(moduleUnderTest.incrootpath, False, None)
     os.mkdir(moduleUnderTest.incrootpath)
 
@@ -152,64 +152,126 @@ def file_has_data(path):
     except:
         return False
 
-def validateWebsite(image_tree):
+# the validation does not test S3.  The tests will build the S3 tree in the
+# local filesystem and the tree is validated there
+def validateWebsite(inc_image_tree):
     success = True
-    root = moduleUnderTest.webrootpath
+    incroot = moduleUnderTest.incrootpath
+    s3root = moduleUnderTest.s3rootpath
     
-    assert file_has_data(os.path.join(root, "index.html"))
-    rootdirlist = os.listdir(root)
-    if len(rootdirlist) > len(image_tree)+1:
+    assert file_has_data(os.path.join(incroot, "index.html"))
+    
+    incrootdirlist = os.listdir(incroot)
+    if len(incrootdirlist) > len(inc_image_tree)+1: # "+1" is index.html
         success = False
-        logging.error("Extraneous file(s) in %s: %s" % (root, rootdirlist))
+        logging.error("Extraneous file(s) in %s: %s" % (incroot,incrootdirlist))
         
-    for (date,camlist) in image_tree:
-        datepath = os.path.join(root, date)
-        if not os.path.isdir(datepath):
+    s3rootdirlist = os.listdir(s3root)
+    if len(s3rootdirlist) > len(inc_image_tree):
+        success = False
+        logging.error("Extraneous file(s) in %s: %s" % (s3root,s3rootdirlist))
+        
+    for (date,camlist) in inc_image_tree:
+        incdatepath = os.path.join(incroot, date)
+        if not os.path.isdir(incdatepath):
             success = False
-            logging.error("Missing directory: %s" % datepath)
+            logging.error("Missing directory: %s" % incdatepath)
             continue
-        datedirlist = os.listdir(datepath)
-        if len(datedirlist) > len(camlist):
+        
+        s3datepath = os.path.join(s3root, date)
+        if not os.path.isdir(s3datepath):
             success = False
-            logging.error("Extraneous file(s) in %s: %s" % (datepath, datedirlist))
+            logging.error("Missing directory: %s" % s3datepath)
+            continue
+        
+        incdatedirlist = os.listdir(incdatepath)
+        if len(incdatedirlist) > len(camlist):
+            success = False
+            logging.error("Extraneous file(s) in %s: %s" \
+                          % (incdatepath, incdatedirlist))
+            
+        s3datedirlist = os.listdir(s3datepath)
+        if len(s3datedirlist) > len(camlist):
+            success = False
+            logging.error("Extraneous file(s) in %s: %s" \
+                          % (s3datepath, s3datedirlist))
             
         for (cam, imagelist) in camlist:
-            campath = os.path.join(datepath, cam)
-            if not os.path.isdir(campath):
+            inccampath = os.path.join(incdatepath, cam)
+            if not os.path.isdir(inccampath):
                 success = False
-                logging.error("Missing directory: %s" % campath)
+                logging.error("Missing directory: %s" % inccampath)
                 continue
-            camdirlist = os.listdir(campath)
-            # there should be six entries in the camera directory:
-            # hires, html, mediumres, thumbnails, index.html, index_hidden.html
-            if len(camdirlist) > 6:     
+
+            s3campath = os.path.join(s3datepath, cam)
+            if not os.path.isdir(s3campath):
                 success = False
-                logging.error("Extraneous file(s) in %s: %s" % (campath, camdirlist))
+                logging.error("Missing directory: %s" % s3campath)
+                continue
+
+            # there should be five entries in the incoming camera directory:
+            # html, index.html, index_hidden.html, plus the directories 
+            # for the processed image files before they are moved to s3, 
+            # medres and thumbs
+            inccamdirlist = os.listdir(inccampath)
+            if len(inccamdirlist) > 5:     
+                success = False
+                logging.error("Extraneous file(s) in %s: %s" \
+                              % (inccampath, inccamdirlist))
+                
+            # there should be three entries in the s3 camera directory:
+            # hires, medres, thumbs
+            s3camdirlist = os.listdir(s3campath)
+            if len(s3camdirlist) > 3:     
+                success = False
+                logging.error("Extraneous file(s) in %s: %s" \
+                              % (s3campath, s3camdirlist))
                 
             # check for index.html
-            filepath = os.path.join(campath, "index.html")
+            filepath = os.path.join(inccampath, "index.html")
             if not file_has_data(filepath):
                 success = False
-                logging.error("Missing or zero length website file: %s" % filepath)
+                logging.error("Missing or zero length website file: %s" \
+                              % filepath)
                
             # check for index_hidden.html
-            filepath = os.path.join(campath, "index_hidden.html")
+            filepath = os.path.join(inccampath, "index_hidden.html")
             if not file_has_data(filepath):
                 success = False
-                logging.error("Missing or zero length website file: %s" % filepath)
+                logging.error("Missing or zero length website file: %s" \
+                              % filepath)
                 
             # list of directories under a camera directory
             # and the suffixes of filepaths within them
-            dir_suffix = [ 
-                          ("hires", ".jpg"),
+            inc_dir_suffix = [ 
                           ("html", ".html"),
+                          ]
+            
+            s3_dir_suffix = [ 
+                          ("hires", ".jpg"),
                           ("mediumres", "_medium.jpg"),
                           ("thumbnails", "_thumb.jpg"),
                           ]
             
-            # check each directory under the camera dir for correct contents
-            for (direct, suffix) in dir_suffix:
-                dirpath = os.path.join(campath, direct)
+            # check each directory under the incoming camera dir for correct
+            # contents
+            for (direct, suffix) in inc_dir_suffix:
+                dirpath = os.path.join(inccampath, direct)
+                dirlist = os.listdir(dirpath)
+                if len(dirlist) > len(imagelist):
+                    success = False
+                    logging.error("Extraneous file(s) in %s: %s" % (dirpath, dirlist))
+                
+                for image in imagelist:
+                    (partpath, unused_ext) = os.path.splitext(os.path.join(dirpath, image))
+                    filepath = partpath + suffix
+                    if not file_has_data(filepath):
+                        success = False
+                        logging.error("Missing or zero length website file: %s: " % filepath)
+
+            # check each directory under the S3 camera dir for correct contents
+            for (direct, suffix) in s3_dir_suffix:
+                dirpath = os.path.join(s3campath, direct)
                 dirlist = os.listdir(dirpath)
                 if len(dirlist) > len(imagelist):
                     success = False
@@ -241,7 +303,14 @@ class TestSurveilleance(unittest.TestCase):
         #
         moduleUnderTest.cameras = testsettings.cameras
         moduleUnderTest.incrootpath = testsettings.incrootpath
-        moduleUnderTest.webrootpath = testsettings.webrootpath
+        moduleUnderTest.s3rootpath = testsettings.s3rootpath
+        moduleUnderTest.s3_host = testsettings.s3_host
+        moduleUnderTest.s3_webfs_bucket = testsettings.s3_webfs_bucket
+        moduleUnderTest.s3_root_url = \
+                testsettings.s3_root_url
+        moduleUnderTest.s3_location = testsettings.s3_location
+        moduleUnderTest.s3_reduced_redundancy = \
+                testsettings.s3_reduced_redundancy
        
         # override the datetime.date().today method
         datetime.date = ForceDate
@@ -275,8 +344,8 @@ class TestSurveilleance(unittest.TestCase):
         cam = moduleUnderTest.cameras[0]
         indir = os.path.join(moduleUnderTest.incrootpath, "2013-07-01", cam.shortname)
         os.makedirs(indir)
-        webdir = os.path.join(moduleUnderTest.webrootpath, "2013-07-01", cam.shortname)
-        os.makedirs(os.path.join(webdir, "hires"))
+        s3dir = os.path.join(moduleUnderTest.s3rootpath, "2013-07-01", cam.shortname)
+        os.makedirs(os.path.join(s3dir, "hires"))
         
         # put a fragment of a test jpg in the indir
         tfn = "SampleImage.jpg"
@@ -292,7 +361,7 @@ class TestSurveilleance(unittest.TestCase):
         os.close(infd)
         time.sleep(2)
         
-        hfp = os.path.join(webdir, "hires", ifn)
+        hfp = os.path.join(s3dir, "hires", ifn)
         
         # run processImage().  
         # Since the mod time is recent, The file should stay in indir

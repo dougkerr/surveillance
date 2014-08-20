@@ -56,13 +56,13 @@ cameras = [
 #   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
 #   images
 #
-# webrootpath is the full pathname of the root directory for the generated
+# s3rootpath is the full pathname of the root directory for the generated
 #   website
 #
 ################################################################################
         
 incrootpath = "c:/survtesting/inc"
-webrootpath = "c:/survtesting/web"
+s3rootpath = "c:/survtesting/web"
 
 ################################################################################
 # 
@@ -74,6 +74,8 @@ webrootpath = "c:/survtesting/web"
 #
 s3_host = "objects.dreamhost.com"
 s3_webfs_bucket = "cv.test1"
+# the URL of the bucket, as seen through any CNAME mapping
+s3_root_url = "file://"
 # NOTE: the bucket location needs to be a region with read-after-write
 # consistency for the tests to work correctly.  For AWS, this means any
 # region other than US Standard.  See: 

@@ -96,12 +96,18 @@ def htmlpath(indir, filename):
     return os.path.join(indir, htmldir, os.path.splitext(filename.strip())[0] + html_postfix)
 
 # s3: given the full path of a file or directory in the incoming file tree,
-# return the full path of the corresponding file or directory in the website
+# return the full path of the corresponding file or directory in the S3
 # file tree
 #
-def inc_to_web_path(incpath):
+def inc_to_s3_path(incpath):
     rp = os.path.relpath(incpath, incrootpath)
-    return webfs.path_join(webrootpath, rp)
+    return webfs.path_join(s3rootpath, rp)
+
+# s3: given the full path of a file in the incoming directory tree, return the
+# URL of the corresponding file in the S3 store
+#
+def inc_to_s3_url(incpath):
+    return s3_root_url + inc_to_s3_path(incpath)
     
 def indexhtmlpath(indir, filename):
     return os.path.join(indir, os.path.splitext(filename.strip())[0] + html_postfix)
@@ -118,13 +124,13 @@ def htmlurl(filename) :
 def indexhtmlurl(filename) :
     return  "../" + os.path.splitext(filename.strip())[0] + html_postfix
 
-
-def thumburl(filename):
-    return "../" + thumbdir +"/" + os.path.splitext(filename.strip())[0] + thumb_postfix
-
-
-def thumburlfromindex(filename):
-    return thumbdir +"/" + os.path.splitext(filename.strip())[0] + thumb_postfix
+# s3: given the full path of the incoming date/cam directory and incoming image
+# name, return URL of the thumbnail in the S3 store
+#
+def thumburl(datecampath, filename):
+    return s3_root_url + inc_to_s3_path(datecampath) \
+            + "/" + thumbdir +"/" + os.path.splitext(filename.strip())[0] \
+            + thumb_postfix
 
 def daylisthtmlpath(filename):
     return os.path.join(incrootpath, os.path.splitext(filename.strip())[0] + html_postfix)
@@ -178,8 +184,8 @@ def processImage(indir, filename, cam, master_image=None):
         mediumpathfilename = mediumpath(indir, filename)
         logging.info("Processing %s" % (infilepathfilename))
     
-        thumbexists = webfs.path_isfile(inc_to_web_path(thumbpathfilename))
-        mediumexists = webfs.path_isfile(inc_to_web_path(mediumpathfilename))
+        thumbexists = webfs.path_isfile(inc_to_s3_path(thumbpathfilename))
+        mediumexists = webfs.path_isfile(inc_to_s3_path(mediumpathfilename))
     
         cropped_img = None
     
@@ -217,7 +223,7 @@ def processImage(indir, filename, cam, master_image=None):
                 try :
                     cropped_img.save(mediumpathfilename, "JPEG")
                     webfs.move_to_web(mediumpathfilename, 
-                                      inc_to_web_path(mediumpathfilename))
+                                      inc_to_s3_path(mediumpathfilename))
                 except IOError:
                     logging.error("Cannot save mediumres image %s" % mediumpathfilename)
     
@@ -236,7 +242,7 @@ def processImage(indir, filename, cam, master_image=None):
                 try :
                     cropped_img.save(thumbpathfilename, "JPEG")
                     webfs.move_to_web(thumbpathfilename, 
-                                      inc_to_web_path(thumbpathfilename))
+                                      inc_to_s3_path(thumbpathfilename))
                 except IOError:
                     logging.error("Cannot save thumbnail %s" % thumbpathfilename)
     
@@ -252,7 +258,7 @@ def processImage(indir, filename, cam, master_image=None):
             logging.error("Failed to crop image; moving to hires: %s" % infilepathfilename);
             
         webfs.move_to_web(infilepathfilename,
-                          inc_to_web_path(hirespathfilename))
+                          inc_to_s3_path(hirespathfilename))
     except Exception, e:
         logging.error("Unexpected exception in processImage()")
         logging.exception(e)
@@ -328,7 +334,8 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
                     %s sec.</td>
                     </tr>
             </table>
-            """ % (htmlurlfromindex(filename),  thumburlfromindex(filename), timestamp.time().isoformat(), sequencetime.seconds)
+            """ % (htmlurlfromindex(filename), thumburl(indir, filename), 
+                   timestamp.time().isoformat(), sequencetime.seconds)
 
     htmlstring_thumbnails += "</td></tr></table>"
 
@@ -336,14 +343,14 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
     navigational_html = """<h4 align="center">"""
     if day_index+1 < len(daydirs) : 
         navigational_html += \
-                """<a href="../../%s/%s/"><-- Previous day</a>&nbsp;&nbsp; """ \
+                """<a href="../../%s/%s/index.html"><-- Previous day</a>&nbsp;&nbsp; """ \
                 % (path2dir(daydirs[day_index+1]), cam.shortname)
     else:
         navigational_html += \
                 """<font color="grey"><-- Previous day</a>&nbsp;&nbsp; """
     navigational_html += """<a href="%s">UP</a>"""  % (daylisturlfromindex("index"))
     if day_index > 0 : 
-        navigational_html += """ &nbsp;&nbsp;<a href="../../%s/%s/">Next day --></a>""" % (path2dir(daydirs[day_index-1]), cam.shortname)
+        navigational_html += """ &nbsp;&nbsp;<a href="../../%s/%s/index.html">Next day --></a>""" % (path2dir(daydirs[day_index-1]), cam.shortname)
     else :
         navigational_html += """ <font color="grey">Next day --></font>"""
     navigational_html += """</h4>"""
@@ -351,7 +358,7 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
 
     cam_nav_html  = """<h4 align="center">"""
     for cam_url in cameras:
-        cam_nav_html +=  """[<a href="../%s">%s</a>]&nbsp;&nbsp;""" % (cam_url.shortname, cam_url.longname)
+        cam_nav_html +=  """[<a href="../%s/index.html">%s</a>]&nbsp;&nbsp;""" % (cam_url.shortname, cam_url.longname)
 
     cam_nav_html += """</h4>"""
 
@@ -374,8 +381,8 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
     htmlfile.close()
     
     # hack for s3
-    webfs.mkdir(inc_to_web_path(indir))    
-    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
+#     webfs.mkdir(inc_to_s3_path(indir))    
+#     webfs.move_to_web(htmlfilepath, inc_to_s3_path(htmlfilepath))
     
     return
 
@@ -412,9 +419,10 @@ def make_image_html(indir, sequences, sequence_index, image_index):
 
 
     htmlfilepath = htmlpath(indir, filename)
-    relativeoriginalpathfilename = "../" + hiresdir + "/" + filename
+    hiresurl = inc_to_s3_url(indir + "/" + hiresdir + "/" + filename)
 #     relativethumbpathfilename = thumburl(filename)
-    relativemediumpathfilename = "../" + mediumresdir + "/" + os.path.splitext(filename.strip())[0] + medium_postfix
+    medresrurl = inc_to_s3_url(indir + "/" + mediumresdir + "/" \
+                    + os.path.splitext(filename.strip())[0] + medium_postfix)
 
     htmlfile = open(htmlfilepath, "w")
     htmlstring = """
@@ -422,7 +430,7 @@ def make_image_html(indir, sequences, sequence_index, image_index):
 
     htmlstring += """<p align="center"><a href="%s">Show Original Image<br>
 <img border="0" src="%s"></a></p>
-""" % (relativeoriginalpathfilename, relativemediumpathfilename)
+""" % (hiresurl, medresrurl)
 
     htmlstring += """<p align="center">%s</p>""" % timestamp.ctime()
     
@@ -483,7 +491,8 @@ def make_image_html(indir, sequences, sequence_index, image_index):
             border = 1
         else :
             border = 0
-        htmlstring += """<a href="%s"><img border="%s" src="%s"></a>""" % (htmlurl(filename), border, thumburl(filename))
+        htmlstring += """<a href="%s"><img border="%s" src="%s"></a>""" \
+                % (htmlurl(filename), border, thumburl(indir, filename))
 
         
     htmlstring += """</p>"""
@@ -495,7 +504,7 @@ def make_image_html(indir, sequences, sequence_index, image_index):
     htmlfile.close()
     
     # s3 hack
-    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
+#     webfs.move_to_web(htmlfilepath, inc_to_s3_path(htmlfilepath))
 
     return
 
@@ -581,18 +590,16 @@ def file2time(filename):
     return (hour, minute, second)
 
 
-def make_subdirs(indir):
+def make_incsubdirs(indir):
     mkdir(os.path.join(indir, thumbdir))
     mkdir(os.path.join(indir, mediumresdir))
-    mkdir(os.path.join(indir, hiresdir))
     mkdir(os.path.join(indir, htmldir))
     
 # s3: done
-def make_websubdirs(webdir):
+def make_s3subdirs(webdir):
     webfs.mkdir(webfs.path_join(webdir, thumbdir))
     webfs.mkdir(webfs.path_join(webdir, mediumresdir))
     webfs.mkdir(webfs.path_join(webdir, hiresdir))
-    webfs.mkdir(webfs.path_join(webdir, htmldir))
 
 # s3: no interaction with any filesystem
 def sequence_dirlist(files, indir, last_processed_image):
@@ -672,7 +679,7 @@ def make_sequence_and_last_processed_image(indir):
         last_processed_sequence = None
     else:
         hiresdirpath = hirespath(indir, "")    
-        hiresfiles = get_images_in_web_dir(inc_to_web_path(hiresdirpath))
+        hiresfiles = get_images_in_web_dir(inc_to_s3_path(hiresdirpath))
 
         # find first unprocessed image in orig.
         if len(origfiles) > 0 :
@@ -715,13 +722,13 @@ def process_day(daysdirs, day_index):
 
             logging.info("Date %s, %s, %s" % (processingyear, processingmonth, processingday))
 
-            make_subdirs(indir)
+            make_incsubdirs(indir)
             
             # s3: set up web date, cam & sub- directories
-            webfs.mkdir(inc_to_web_path(daydir))
-            webdirpath = inc_to_web_path(indir)
+            webfs.mkdir(inc_to_s3_path(daydir))
+            webdirpath = inc_to_s3_path(indir)
             webfs.mkdir(webdirpath)
-            make_websubdirs(webdirpath)
+            make_s3subdirs(webdirpath)
 
             (sequences, last_processed_sequence) = make_sequence_and_last_processed_image(indir)
             if sequences != None:
@@ -759,7 +766,7 @@ def deltree(deldir):
     # S3: remove S3 file tree after presumably successful removal of local
     # incoming file tree
     if delete:
-        webfs.rmtree(deldir)
+        webfs.rmtree(inc_to_s3_path(deldir))
     return
 
 
@@ -869,7 +876,7 @@ def make_day_list_html(daydirs):
 
         # iterate through all the cameras
         for cam in cameras :
-            cam_url = "%s/%s/" % (path2dir(daydir), cam.shortname)
+            cam_url = "%s/%s/index.html" % (path2dir(daydir), cam.shortname)
             htmlstring += """<a href="%s">%s</a>&nbsp;&nbsp;""" % (cam_url, cam.longname)
 
         # end </li>
@@ -882,7 +889,7 @@ def make_day_list_html(daydirs):
     htmlfile.write(htmlstring)
     htmlfile.close()
     
-    webfs.move_to_web(htmlfilepath, inc_to_web_path(htmlfilepath))
+#     webfs.move_to_web(htmlfilepath, inc_to_s3_path(htmlfilepath))
 
     return
 

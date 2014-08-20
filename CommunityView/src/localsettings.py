@@ -55,17 +55,21 @@ cameras = [
 #   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
 #   images
 #
-# webrootpath is the full pathname of the root directory for the generated
-#   website
+# s3rootpath is the full pathname of the root directory of the image file tree
+#   within the S3 bucket.  This directory will contain "date" directories
+#   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
+#   images
 #
 ################################################################################
 		
 incrootpath = "/home/example_user/upload_directory/"
-webrootpath = "/home/example_user/website_directory"
+s3rootpath = "/"
 
 # s3 settings
 s3_host = "objects.dreamhost.com"
 s3_webfs_bucket = "cv.test1"
+# the URL of the bucket, as see through any CNAME mapping
+s3_root_url = "http://cv.test1.objects.dreamhost.com"
 s3_reduced_redundancy = True
 
 retain_days = 30 # number of days to retain images.
