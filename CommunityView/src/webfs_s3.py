@@ -103,7 +103,8 @@ def mkdir(path):
 #
 def move_to_web(src_path, dest_path):
     if not os.path.isfile(src_path):
-        raise webfs.WebFSIOError("Source path must be a regular file")
+        raise webfs.WebFSIOError("Source path must be a regular file: %s" \
+                                 % src_path)
     
     fsize = os.path.getsize(src_path)
     
