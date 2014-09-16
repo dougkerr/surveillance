@@ -56,13 +56,16 @@ cameras = [
 #   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
 #   images
 #
-# s3rootpath is the full pathname of the root directory for the generated
+# s3rootpath is the full path of the simulated s3 storage
+#
+# lwebrootpath is the full pathname of the root directory for the generated
 #   website
 #
 ################################################################################
         
 incrootpath = "c:/survtesting/inc"
 s3rootpath = "c:/survtesting/web"
+lwebrootpath = "c:/survtesting/lweb"
 
 ################################################################################
 # 
