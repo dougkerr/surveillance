@@ -20,8 +20,12 @@
 #
 ################################################################################
 import unittest
-import stats
 import testsettings
+import localsettings
+
+localsettings.incrootpath = testsettings.incrootpath
+
+import stats
 import os
 import datetime
 import time
@@ -65,9 +69,6 @@ class MockTime():
 class TestStats(unittest.TestCase):
 
     def setUp(self):
-        stats.incrootpath = testsettings.incrootpath
-        stats.lwebrootpath = testsettings.lwebrootpath
-        stats.statspath = os.path.join(stats.lwebrootpath, "stats")
         if not os.path.isdir(stats.statspath):
             os.makedirs(stats.statspath)
         for f in os.listdir(stats.statspath):
@@ -184,6 +185,7 @@ class TestStats(unittest.TestCase):
         
         shutil.rmtree(stats.incrootpath, False, None)
         os.mkdir(stats.incrootpath)
+        os.mkdir(stats.statspath)   # XXX hack while statspath under incrootpath
         datecamfiles = ((("2014-07-01", testsettings.cameras[0].shortname), 3),
                         (("2014-06-30", testsettings.cameras[0].shortname), 4),
                         (("2014-06-29", testsettings.cameras[0].shortname), 5))

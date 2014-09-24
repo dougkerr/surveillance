@@ -1,7 +1,7 @@
 ################################################################################
 #
 # Copyright (C) 2012-2014 Neighborhood Guard, Inc.  All rights reserved.
-# Original author: Jesper Jercenoks
+# Original author: Jesper Jurcenoks
 # 
 # This file is part of CommunityView.
 # 
@@ -42,7 +42,7 @@ import time
 import logging.handlers
 import webfs
 import stats
-
+from utils import dir2date, file2time, get_images_in_dir, get_daydirs
 from localsettings import * #@UnusedWildImport (Camera)
 
     
@@ -555,44 +555,6 @@ def process_sequence(indir, sequences, cam, sequence_index):
         make_image_html(indir, sequences, sequence_index, image_index)
 
     return
-
-
-def dir2date(indir):
-    #extract date from indir style z:\\ftp\\12-01-2
-    searchresult = re.search(r".*/([0-9]{4})-([0-9]{2})-([0-9]{2})", indir)
-    if searchresult == None:     #extract date from indir style 12-01-2
-        searchresult = re.search(r".*([0-9]{4})-([0-9]{2})-([0-9]{2})", indir)
-        
-    if searchresult != None:
-        year= int(searchresult.group(1))
-        month = int(searchresult.group(2))
-        day = int(searchresult.group(3))
-    else:
-        year = None
-        month = None
-        day = None
-
-    return (year, month, day)
-
-
-
-def file2time(filename):
-    #extract time from filename style  0-42-3023210.jpg
-
-    searchresult = re.search(r"([0-9]{1,2})-([0-9]{2})-([0-9]{2})", filename)
-
-    if searchresult != None:
-        hour = int(searchresult.group(1))
-        minute = int(searchresult.group(2))
-        second = int(searchresult.group(3))
-    else:
-        hour = None
-        minute = None
-        second = None
-
-    return (hour, minute, second)
-
-
 def make_incsubdirs(indir):
     mkdir(os.path.join(indir, thumbdir))
     mkdir(os.path.join(indir, mediumresdir))
@@ -637,24 +599,7 @@ def sequence_dirlist(files, indir, last_processed_image):
         sequences = sequences[1:]
     return (sequences, last_processed_sequence)
 
-
-def get_images_in_dir(indir):
-
-    images = []
-
-    if os.path.isdir(indir):
-        logging.info("loading dirlist for %s" % indir)
-        origfiles = os.listdir(indir)
-
-        for origfile in origfiles:
-            if origfile.lower().endswith(".jpg"):
-                images.append(origfile)
-
-        logging.info("sorting dirlist for %s" % indir)
-        images=sorted(images)
-    return images
-
-# mimic get_images_in_dir() above, but for images in a website directory
+# mimic get_images_in_dir(), but for images in a website directory
 #
 def get_images_in_web_dir(webpath):
     images = []
@@ -669,7 +614,6 @@ def get_images_in_web_dir(webpath):
     logging.info("sorting web dirlist for %s" % webpath)
     images=sorted(images)
     return images
-
 
 # s3: done
 def make_sequence_and_last_processed_image(indir):
@@ -772,27 +716,6 @@ def deltree(deldir):
         webfs.rmtree(inc_to_s3_path(deldir))
     return
 
-
-# returns a list of the incoming date directory pathnames.
-#
-# S3: Note that this is different from the original non-s3 code in which the
-# incoming and web date directories were the same.  This function does not
-# include any web date directories that don't happen to have corresponding
-# incoming directories. Therefore, the incoming date directories MUST be a
-# superset of the website date directories so that all the dates get processed
-#
-def get_daydirs():        
-    daydirlist = os.listdir(incrootpath)
-
-    daydirs=[]
-    for direc in daydirlist:
-        (year, unused_month, unused_day) = dir2date(direc)
-        dirpath = os.path.join(incrootpath, direc)
-        if os.path.isdir(dirpath) and year != None:
-            daydirs.append(dirpath)
-    daydirs = sorted(daydirs)
-
-    return daydirs
 
 def purge_images(daydirs):
     logging.info("Starting purge_images()")

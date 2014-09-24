@@ -21,8 +21,21 @@
 ################################################################################
 
 import unittest
-import communityview
 import testsettings
+import localsettings
+
+# Set up the testing values for the global config vars
+#
+localsettings.incrootpath           = testsettings.incrootpath
+localsettings.cameras               = testsettings.cameras
+localsettings.s3rootpath            = testsettings.s3rootpath
+localsettings.s3_host               = testsettings.s3_host
+localsettings.s3_webfs_bucket       = testsettings.s3_webfs_bucket
+localsettings.s3_root_url           = testsettings.s3_root_url
+localsettings.s3_location           = testsettings.s3_location
+localsettings.s3_reduced_redundancy = testsettings.s3_reduced_redundancy 
+
+import communityview
 import time
 import threading
 import logging
@@ -30,6 +43,8 @@ import os
 import shutil
 import inspect
 import datetime
+import stats
+from utils import is_thread_prefix
 
 moduleUnderTest = communityview
 
@@ -95,9 +110,11 @@ def deleteTestFiles():
     top-level directory of the CommunityView website, and the
     top-level directory for incoming images.
     """
-    shutil.rmtree(moduleUnderTest.s3rootpath, False, None)
+    if os.path.isdir(moduleUnderTest.s3rootpath):
+        shutil.rmtree(moduleUnderTest.s3rootpath, False, None)
     os.mkdir(moduleUnderTest.s3rootpath)
-    shutil.rmtree(moduleUnderTest.incrootpath, False, None)
+    if os.path.isdir(moduleUnderTest.incrootpath):
+        shutil.rmtree(moduleUnderTest.incrootpath, False, None)
     os.mkdir(moduleUnderTest.incrootpath)
 
 
@@ -162,7 +179,7 @@ def validateWebsite(inc_image_tree):
     assert file_has_data(os.path.join(incroot, "index.html"))
     
     incrootdirlist = os.listdir(incroot)
-    if len(incrootdirlist) > len(inc_image_tree)+1: # "+1" is index.html
+    if len(incrootdirlist) > len(inc_image_tree)+2: # +2: index.html, stats
         success = False
         logging.error("Extraneous file(s) in %s: %s" % (incroot,incrootdirlist))
         
@@ -289,6 +306,8 @@ def validateWebsite(inc_image_tree):
 class TestSurveilleance(unittest.TestCase):
 
     origThreadList = threading.enumerate()
+    stats_thread = None
+    stats_run = threading.Event()
 
     def setUp(self):
 
@@ -299,19 +318,6 @@ class TestSurveilleance(unittest.TestCase):
                 pass
         moduleUnderTest.set_up_logging()
         
-        # Set up the testing values for the communityview global vars
-        #
-        moduleUnderTest.cameras = testsettings.cameras
-        moduleUnderTest.incrootpath = testsettings.incrootpath
-        moduleUnderTest.s3rootpath = testsettings.s3rootpath
-        moduleUnderTest.s3_host = testsettings.s3_host
-        moduleUnderTest.s3_webfs_bucket = testsettings.s3_webfs_bucket
-        moduleUnderTest.s3_root_url = \
-                testsettings.s3_root_url
-        moduleUnderTest.s3_location = testsettings.s3_location
-        moduleUnderTest.s3_reduced_redundancy = \
-                testsettings.s3_reduced_redundancy
-       
         # override the datetime.date().today method
         datetime.date = ForceDate
            
@@ -465,29 +471,41 @@ class TestSurveilleance(unittest.TestCase):
         if threading.currentThread().name == "MainThread":
             self.waitForThreads()   # wait for communityview to complete current tasks
             # if we've had a pass through communityview's main loop without
-            # finding any work to do, set the terminate flag and return
+            # finding any work to do, set the main loop terminate flag and the
+            # stats loop terminate flag, then release the stats thread, and wait
+            # for it to finish
             if moduleUnderTest.images_to_process == False \
                     and moduleUnderTest.files_to_purge == False:
                 moduleUnderTest.terminate_main_loop = True
+                stats.terminate_stats_loop = True
+                self.stats_run.set()    # release the blocked stats thread
+                assert self.stats_thread, "Don't have stats thread to wait on."
+                self.stats_thread.join()     
+        # if this is the stats thread calling sleep(), block until the main loop
+        # is done with its processing, then let stats thread run to write the
+        # stats file(s)
+        elif is_thread_prefix(threading.current_thread(), "Stats"):
+            self.stats_thread = threading.current_thread()
+            self.stats_run.wait()
         else:
             # the only other sleep call is in processtoday().
             # If processtoday() is trying to sleep, it thinks it's done with
-            # its work, so force it to return so that its thread will die
+            # its work, so force it to return so that its thread will die.
             moduleUnderTest.terminate_processtoday_loop = True
 
     def waitForThreads(self):
+        """Wait for all threads to die that are not either threads
+        that were running when the test was started, or the stats thread."""
         wait = True
         while wait:
             wait = False
             for thread in threading.enumerate():
-                if self.origThreadList.count(thread) == 0:
+                if self.origThreadList.count(thread) == 0 \
+                        and not is_thread_prefix(thread, "Stats"):
                     logging.info("waitForThreads: waiting for "+thread.name)
                     wait = True
                     thread.join()
         logging.info("waitForThreads: done waiting for all threads")
-                        
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
