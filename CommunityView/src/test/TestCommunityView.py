@@ -440,23 +440,45 @@ class TestSurveilleance(unittest.TestCase):
     def test04Purge(self):
         logging.info("========== %s" % inspect.stack()[0][3])
         ForceDate.setForcedDate(datetime.date(2013,7,1))
+        
+        # incoming tree of files to be processed, not purged
         buildImages(moduleUnderTest.incrootpath, "2013-07-01", "camera1", "12-00-00", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-07-01", "camera2", "12-00-02", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-30", "camera1", "11-00-00", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-30", "camera2", "11-00-02", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-29", "camera1", "10-00-00", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-29", "camera2", "10-00-02", 1, 10)
-        moduleUnderTest.retain_days = 3
         tree = get_image_tree() # snapshot of files to be processed, not purged
+        
+        # delete the files from the snapshot so we can process some old files into s3
+        deleteTestFiles()
+        
+        # process some old files so there's something in s3 to be purged
+        buildImages(moduleUnderTest.incrootpath, "2013-06-25", "camera1", "10-00-00", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-06-25", "camera2", "10-00-02", 1, 10)
+        moduleUnderTest.retain_days = 7
+        SleepHook.setCallback(self.terminateTestRun)
+        moduleUnderTest.main()
+        SleepHook.removeCallback()
 
-        # Files to be purged
+        # recreate the incoming tree of files to be processed, not purged
+        buildImages(moduleUnderTest.incrootpath, "2013-07-01", "camera1", "12-00-00", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-07-01", "camera2", "12-00-02", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-06-30", "camera1", "11-00-00", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-06-30", "camera2", "11-00-02", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-06-29", "camera1", "10-00-00", 1, 10)
+        buildImages(moduleUnderTest.incrootpath, "2013-06-29", "camera2", "10-00-02", 1, 10)
+        # create incoming files to be purged
         buildImages(moduleUnderTest.incrootpath, "2013-06-28", "camera1", "09-00-00", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-28", "camera2", "09-00-02", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-27", "camera1", "08-00-00", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-27", "camera2", "08-00-02", 1, 10)
         buildImages(moduleUnderTest.incrootpath, "2013-06-26", "camera1", "07-00-00", 1, 10)
-        buildImages(moduleUnderTest.incrootpath, "2013-06-26", "camera2", "07-00-02", 1, 10)
-        
+        buildImages(moduleUnderTest.incrootpath, "2013-06-26", "camera2", "07-00-02", 1, 10)        
+
+        # process everything: should delete old files in s3 and newer-but-old
+        # files in incoming tree
+        moduleUnderTest.retain_days = 3
         SleepHook.setCallback(self.terminateTestRun)
         moduleUnderTest.main()
         SleepHook.removeCallback()

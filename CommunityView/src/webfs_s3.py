@@ -132,7 +132,8 @@ def move_to_web(src_path, dest_path):
     # remove src_path since this is a move
     os.remove(src_path)
 
-# delete the tree of files rooted at path. Raise exception if deletion fails
+# delete the tree of files rooted at path. Raise exception if deletion fails.
+# Do not raise an exception if there are no files rooted at path
 #
 def rmtree(path):
     path = _normalize_s3_dir_path(path)

@@ -74,7 +74,8 @@ def path_join(*args):
     _chkwfs()
     return wfs.path_join(*args)
 
-# delete the tree of files rooted at path. Raise exception if deletion fails
+# delete the tree of files rooted at path. Raise exception if deletion fails.
+# However, do not raise an exception of path does not exist
 #
 def rmtree(path):
     _chkwfs()

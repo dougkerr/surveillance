@@ -710,21 +710,23 @@ def deltree(deldir):
             else :
                 os.remove(filepath)
     rmdir(deldir)
-    # S3: remove S3 file tree after presumably successful removal of local
-    # incoming file tree
-    if delete:
-        webfs.rmtree(inc_to_s3_path(deldir))
     return
 
 
 def purge_images(daydirs):
     logging.info("Starting purge_images()")
-    try:
-        for del_dir in daydirs:
+    for del_dir in daydirs:
+        try:
+            # S3: remove S3 file tree. Do this before removal of incoming
+            # tree because incoming date directories must be a superset of
+            # s3 date directories (see comments in get_daydirs())
+            if delete:
+                webfs.rmtree(inc_to_s3_path(del_dir))
             deltree(del_dir)
-    except Exception, e:
-        logging.error("Unexpected exception in purge_images()")
-        logging.exception(e)
+        except Exception, e:
+            logging.error("Unexpected exception in purge_images() for %s" \
+                          % del_dir)
+            logging.exception(e)
     logging.info("Returning from purge_images()")
     return
 
