@@ -114,16 +114,16 @@ def indexhtmlpath(indir, filename):
     return os.path.join(indir, os.path.splitext(filename.strip())[0] + html_postfix)
 
 
-def htmlurlfromindex(filename) :
-    return htmldir + "/" + os.path.splitext(filename.strip())[0] + html_postfix
+# def htmlurlfromindex(filename) :
+#     return htmldir + "/" + os.path.splitext(filename.strip())[0] + html_postfix
 
 
 def htmlurl(filename) :
     return os.path.splitext(filename.strip())[0] + html_postfix
 
 
-def indexhtmlurl(filename) :
-    return  "../" + os.path.splitext(filename.strip())[0] + html_postfix
+# def indexhtmlurl(filename) :
+#     return  "../" + os.path.splitext(filename.strip())[0] + html_postfix
 
 # s3: given the full path of the incoming date/cam directory and incoming image
 # name, return URL of the thumbnail in the S3 store
@@ -285,7 +285,7 @@ def processImage_threading(indir, filename, cam, master_image=None):
         image_thread.start()
 
 
-# make the index page for a single day
+# make the index page for a single date-cam
 # s3: done
 #
 def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False):
@@ -328,6 +328,9 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
             hidden_seq_count +=1
 
         if sequencetime.seconds >= hide_sequences_shorter_than_sec or hidden:
+            # URL for the image page representing the sequence
+            img_page_url = s3_root_url \
+                            + inc_to_s3_path(htmlpath(indir,filename))
 
             htmlstring_thumbnails += """
             <table border="0" style="border-collapse: collapse" align="left" cellpadding="0">
@@ -337,7 +340,7 @@ def make_index_page(daydirs, day_index, cam, sequences, datestamp, hidden=False)
                     %s sec.</td>
                     </tr>
             </table>
-            """ % (htmlurlfromindex(filename), thumburl(indir, filename), 
+            """ % (img_page_url, thumburl(indir, filename), 
                    timestamp.time().isoformat(), sequencetime.seconds)
 
     htmlstring_thumbnails += "</td></tr></table>"
@@ -443,8 +446,15 @@ def make_image_html(indir, sequences, sequence_index, image_index):
         relativeprev_html = htmlurl(prev_filename)
         htmlstring += """<a href="%s">&lt;-- Prev Image</a>""" % relativeprev_html
 
-    htmlstring += """&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="%s">Up</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""" % indexhtmlurl("index")
-
+    # point up to the datecam index page
+    dcpath = indir.split(os.sep)
+    url = lweb_root_url + "/" + dcpath[-2] + "/" + dcpath[-1] + "/" \
+        + "index.html"
+    htmlstring +=   """&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""" \
+                    """<a href="%s">Up</a>""" \
+                    """&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""" \
+                    """&nbsp;&nbsp;""" % url
+                    
     if next_file != None:
         (next_filename, unused_next_timestamp) = next_file
         relativenext_html = htmlurl(next_filename)
@@ -507,7 +517,7 @@ def make_image_html(indir, sequences, sequence_index, image_index):
     htmlfile.close()
     
     # s3 hack
-#     webfs.move_to_web(htmlfilepath, inc_to_s3_path(htmlfilepath))
+    webfs.move_to_web(htmlfilepath, inc_to_s3_path(htmlfilepath))
 
     return
 
@@ -565,6 +575,7 @@ def make_s3subdirs(webdir):
     webfs.mkdir(webfs.path_join(webdir, thumbdir))
     webfs.mkdir(webfs.path_join(webdir, mediumresdir))
     webfs.mkdir(webfs.path_join(webdir, hiresdir))
+    webfs.mkdir(webfs.path_join(webdir, htmldir))
 
 # s3: no interaction with any filesystem
 def sequence_dirlist(files, indir, last_processed_image):

@@ -56,7 +56,8 @@ cameras = [
 #   (e.g., 2014-07-01, 2014-07-02) each of which are the root of one day's
 #   images
 #
-# s3rootpath is the full path of the simulated s3 storage
+# s3rootpath is the full path of the simulated s3 storage within the "bucket"
+#   pointed to be s3_root_url
 #
 # lwebrootpath is the full pathname of the root directory for the generated
 #   website
@@ -65,7 +66,14 @@ cameras = [
         
 incrootpath = "c:/survtesting/inc"
 s3rootpath = "c:/survtesting/web"
-lwebrootpath = "c:/survtesting/lweb"
+#lwebrootpath = "c:/survtesting/lweb"
+
+# some of the web-accessible files are stored on S3, and some are stored in the
+# local server's file system.  lweb_root_url is the root URL for the files
+# stored on the local server. s3_root_url, below, is the root URL for the files
+# stored on S3
+#
+lweb_root_url = "c:/survtesting/inc"
 
 ################################################################################
 # 

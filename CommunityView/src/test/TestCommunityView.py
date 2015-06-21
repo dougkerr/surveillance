@@ -34,6 +34,8 @@ localsettings.s3_webfs_bucket       = testsettings.s3_webfs_bucket
 localsettings.s3_root_url           = testsettings.s3_root_url
 localsettings.s3_location           = testsettings.s3_location
 localsettings.s3_reduced_redundancy = testsettings.s3_reduced_redundancy 
+localsettings.lweb_root_url         = testsettings.lweb_root_url
+
 
 import communityview
 import time
@@ -236,10 +238,10 @@ def validateWebsite(inc_image_tree):
                 logging.error("Extraneous file(s) in %s: %s" \
                               % (inccampath, inccamdirlist))
                 
-            # there should be three entries in the s3 camera directory:
-            # hires, medres, thumbs
+            # there should be four entries in the s3 camera directory:
+            # hires, medres, thumbs, html
             s3camdirlist = os.listdir(s3campath)
-            if len(s3camdirlist) > 3:     
+            if len(s3camdirlist) > 4:     
                 success = False
                 logging.error("Extraneous file(s) in %s: %s" \
                               % (s3campath, s3camdirlist))
@@ -261,13 +263,15 @@ def validateWebsite(inc_image_tree):
             # list of directories under a camera directory
             # and the suffixes of filepaths within them
             inc_dir_suffix = [ 
-                          ("html", ".html"),
+                          # html entry removed when per-image html files moved to s3
+                          # ("html", ".html"),
                           ]
             
             s3_dir_suffix = [ 
                           ("hires", ".jpg"),
                           ("mediumres", "_medium.jpg"),
                           ("thumbnails", "_thumb.jpg"),
+                          ("html", ".html"),
                           ]
             
             # check each directory under the incoming camera dir for correct

@@ -65,6 +65,13 @@ cameras = [
 incrootpath = "/home/example_user/upload_directory/"
 s3rootpath = "/"
 
+# some of the web-accessible files are stored on S3, and some are stored in the
+# local server's file system.  This var is the root URL for the files
+# stored on the local server. s3_root_url, below, is the root URL for the files
+# stored on S3
+#
+lweb_root_url = "http://vpstest.ridgemontng.org"
+
 # s3 settings
 s3_host = "objects.dreamhost.com"
 s3_webfs_bucket = "cv.test1"
