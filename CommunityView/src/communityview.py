@@ -783,8 +783,8 @@ def processtoday(daysdirs):
     try:
         while isdir_today(daysdirs[0]):
             process_day(daysdirs, 0)
-            logging.info("sleeping")
-            time.sleep(60)
+            logging.info("sleeping 5 sec")
+            time.sleep(5)
             if terminate_processtoday_loop:
                 break
     
