@@ -2,6 +2,7 @@ import boto
 import localsettings
 import os.path
 import webfs
+import logging
 
 # the s3 bucket object containing the webfs files
 s3_bucket = ""
@@ -13,6 +14,15 @@ s3_bucket = ""
 #
 def initialize(host=localsettings.s3_host, bucket=localsettings.s3_webfs_bucket):
     global s3_bucket
+    
+    # VERY IMPORTANT
+    # set a socket timeout.  It's VERY IMPORTANT to do th this.  Otherwise, if
+    # a boto call hangs the main day thread, no more images will be processed
+    # XXX should we convert the timeout to a WEBFSIOERROR in funcs below?
+    #
+    boto.config.add_section('Boto')
+    boto.config.set('Boto', 'http_socket_timeout', '60')
+
     conn = boto.connect_s3(host=host)
     s3_bucket = conn.get_bucket(bucket)
     
@@ -118,8 +128,10 @@ def move_to_web(src_path, dest_path):
     # instead of using that method, we'll use key.set_contents_from_file() which
     # does return a count of bytes transferred
     fp = open(src_path, 'rb')
+    logging.info("starting key.set_contents_from_file() for %s" % (dest_path))
     xfrsize = key.set_contents_from_file(fp, \
                     reduced_redundancy=localsettings.s3_reduced_redundancy)
+    logging.info("done with key.set_contents_from_file() for %s" % (dest_path))
     fp.close()
     if xfrsize != fsize:
         raise webfs.WebFSIOError("move_to_web(): %s to %s" 
