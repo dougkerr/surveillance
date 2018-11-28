@@ -53,7 +53,7 @@ function dcgraph(dcdate, gindex)
             labelsDiv: gname+"_l_div",
             colors: data_colors,
             series : {
-                "Unprocessed Images":{
+                "Today's Unprocessed Images":{
                     axis: "y2"
                 },
                 "Previous Days' Unprocessed Images":{
@@ -72,25 +72,32 @@ function dcgraph(dcdate, gindex)
                     axisLabelWidth: 70
                 }
             },
-            visibility: getVisSwitches() + 
-                [false, false], // ignore extra fields in per-server tbl for now
+            visibility: getVisSwitches().concat(gname=="ServerTotals" ?
+                [false, false] : []),
+                //+ (gname=="ServerTotals" ? [false, false] : []),
+                //([false, false] if gname=="ServerTotals" else []),
+                // ignore extra fields in per-server tbl for now
 
-            drawCallback: function(g) {
-                drawVisSwitches(g);
+            drawCallback: function(g, is_initial) {
+                if( is_initial ) {
+                   console.log("drawCallback of " + g);
+                    drawSwitches(g);
+                    handle_sync_cb();
+                }
             },
         }
 
     );
 }
 
-function drawVisSwitches(g)
+function drawSwitches(g)
 {
     sdiv = document.getElementById("switches_div");
-    if ( sdiv.innerHTML.length == 0 ) // if div empty
+    if ( sdiv.innerHTML.length == 0 ) // if switches div empty
     {
         var l = g.getLabels();
         if (l.length == 1) {
-            return; // leave the div empty if the graph has no data file
+            return; // leave the switches div empty if graph has no data file
         }
         var t = "";
         for (i=1; i<l.length; i++)
@@ -98,10 +105,10 @@ function drawVisSwitches(g)
             // checkboxes
             cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.id = "" + (i-1);
+            cb.id = "" + (i-1); // graph data series number
             cb.checked = true;
+            cb.setAttribute("onchange", "vis_cb_chg(this)");
             sdiv.appendChild(cb);
-            cb.setAttribute("onchange", "vis_data(this)");  //XXX
 
             // checkbox labels
             cbl = document.createElement("label");
@@ -109,26 +116,34 @@ function drawVisSwitches(g)
             cbl.htmlFor = "" + (i-1);
             cbl.appendChild(document.createTextNode(l[i]));
             sdiv.appendChild(cbl);
+
             sdiv.appendChild(document.createElement("br"));
         }
-        //sdiv.innerHTML = t
+        // button to toggle all switches
         var all = document.createElement("input");
-        all.setAttribute("type", "button");
-        all.setAttribute("value", "All");
+        all.type = "button";
+        all.value = "All";
         all.setAttribute("onclick", "toggleAll()");
         sdiv.appendChild(all);
 
+        // sync checkbox
         var synccb = document.createElement("input");
-        synccb.setAttribute("type", "checkbox");
-        synccb.setAttribute("id", "synccb");
+        synccb.type = "checkbox";
+        synccb.id = "synccb";
+        synccb.checked = "true";
         synccb.setAttribute("onchange", "handle_sync_cb()");
+        synccb.style = "margin-left:35px";  // distance from All button
         sdiv.appendChild(synccb);
-        // checkbox label
+
+        dcb = document.getElementById("synccb");
+        console.log( "drawSwitches(): after synccb created, cb = " + dcb );
+
+        // sync checkbox label
         cbl = document.createElement("label");
-        //cbl.style = "color:" + data_colors[i-1];
-        //cbl.htmlFor = "" + (i-1);
+        cbl.htmlFor = "synccb";
         cbl.appendChild(document.createTextNode("Sync Zoom"));
         sdiv.appendChild(cbl);
+
         sdiv.appendChild(document.createElement("br"));
     }
 }
@@ -136,6 +151,10 @@ function drawVisSwitches(g)
 function handle_sync_cb()
 {
     cb = document.getElementById("synccb");
+   console.log( "handle_sync_cb(): synccb = " + cb );
+   console.trace();
+    if( cb == null )
+        return; // ignore if cb not created (because switches div still empty)
     if( cb.checked ) {
         syncobj = Dygraph.synchronize(dygraphs, {
             selection: false,
@@ -197,7 +216,7 @@ function setVisFromSwitches()
 // XXX
 // when a visibility checkbox is changed, this function is called to
 // set the corresponding data plot on each graph visible or hidden
-function vis_data(cb)
+function vis_cb_chg(cb)
 {
     var cbn = parseInt(cb.id);
     for( var i=0; i<gnames.length; i++ )
@@ -237,11 +256,15 @@ function set_up_divs()
 
 function drawgraphs(date)
 {
+    dygraphs = [];
     for (i=0; i<gnames.length; i++ )
     {
         window.dcgraph(date, i);
+       console.log( "drawgraphs(): getLabels ["+i+"] = " + dygraphs[i].getLabels() );
     }
-    handle_sync_cb()
+   cb = document.getElementById("synccb");
+   console.log( "drawgraphs(): synccb = " + cb );
+   console.trace();
 }
 
 function react(e, value)
