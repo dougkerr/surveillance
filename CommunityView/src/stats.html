@@ -31,7 +31,10 @@
 dygraphs = [];
 gnames = [];
 data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
-syncobj = null;
+//syncobj = null;
+blockCallback = false;
+xWasZoomed = false;
+yWasZoomed = false;
 
 function dcgraph(dcdate, gindex)
 {
@@ -83,6 +86,40 @@ function dcgraph(dcdate, gindex)
                    console.log("drawCallback of " + g);
                     drawSwitches(g);
                     handle_sync_cb();
+                }
+                else if (! blockCallback) {
+                    blockCallback = true;
+                    var xrange = g.xAxisRange();
+                    var yrange = g.yAxisRange();
+                    var xIsZoomed = g.isZoomed('x');
+                    var yIsZoomed = g.isZoomed('y');
+                    var xZoomedNow = xIsZoomed && !xWasZoomed;
+                    var yZoomedNow = yIsZoomed && !yWasZoomed;
+                    var isZoomed = xIsZoomed || yIsZoomed;
+                    for (i=0; i<dygraphs.length; i++) {
+                        if (dygraphs[i] == g)
+                            continue;
+                        if (!isZoomed) {
+                            dygraphs[i].resetZoom();
+                            xWasZoomed = false;
+                            yWasZoomed = false;
+                        }
+                        else if (xZoomedNow) {
+                            console.log("x zoom " + xrange);
+                            dygraphs[i].updateOptions( {
+                                dateWindow: xrange
+                            } );
+                            xWasZoomed = true;
+                        }
+                        else if (yZoomedNow) {
+                            console.log("y zoom " + yrange);
+                            dygraphs[i].updateOptions( {
+                                valueRange: yrange
+                            } );
+                            yWasZoomed = true;
+                        }
+                    }
+                    blockCallback = false;
                 }
             },
         }
@@ -155,15 +192,15 @@ function handle_sync_cb()
    console.trace();
     if( cb == null )
         return; // ignore if cb not created (because switches div still empty)
-    if( cb.checked ) {
-        syncobj = Dygraph.synchronize(dygraphs, {
-            selection: false,
-            zoom: true
-        });
-    } else {
-        if (syncobj != null )
-            syncobj.detach();
-    }
+//    if( cb.checked ) {
+//        syncobj = Dygraph.synchronize(dygraphs, {
+//            selection: false,
+//            zoom: true
+//        });
+//    } else {
+//        if (syncobj != null )
+//            syncobj.detach();
+//    }
 }
 
 function toggleAll()
@@ -257,6 +294,8 @@ function set_up_divs()
 function drawgraphs(date)
 {
     dygraphs = [];
+    xWasZoomed = false;
+    yWasZoomed = false;
     for (i=0; i<gnames.length; i++ )
     {
         window.dcgraph(date, i);
