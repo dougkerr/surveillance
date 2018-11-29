@@ -25,7 +25,6 @@
 <head>
 <script type="text/javascript" src="dygraph.js"></script>
 <script type="text/javascript" src="cameras.js"></script>
-<script type="text/javascript" src="synchronizer.js"></script>
 <link rel="stylesheet" href="dygraph.css" />
 <script type="text/javascript">
 dygraphs = [];
@@ -34,8 +33,7 @@ data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 //syncobj = null;
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
-xWasZoomed = false;
-yWasZoomed = false;
+ranges = [];
 
 function dcgraph(dcdate, gindex)
 {
@@ -78,47 +76,49 @@ function dcgraph(dcdate, gindex)
             },
             visibility: getVisSwitches().concat(gname=="ServerTotals" ?
                 [false, false] : []),
-                //+ (gname=="ServerTotals" ? [false, false] : []),
-                //([false, false] if gname=="ServerTotals" else []),
-                // ignore extra fields in per-server tbl for now
 
             drawCallback: function(g, is_initial) {
+               console.log("drawCallback of " + g);
                 if( is_initial ) {
-                   console.log("drawCallback of " + g);
                     drawSwitches(g);
                     handle_sync_cb();
+                    ranges[g.getOption("title")]
+                        = [g.xAxisRange(), g.yAxisRange()];
                 }
-                else if (! blockCallback && syncZoom) { // handle zoom
+                else if (blockCallback) {
+                    ranges[g.getOption("title")]
+                        = [g.xAxisRange(), g.yAxisRange()];
+                }
+                else if (syncZoom) {
                     blockCallback = true;
+                    var ra = ranges[g.getOption("title")];
+                    var oldxrange = ra[0];
+                    var oldyrange = ra[1];
                     var xrange = g.xAxisRange();
                     var yrange = g.yAxisRange();
-                    var xIsZoomed = g.isZoomed('x');
-                    var yIsZoomed = g.isZoomed('y');
-                    var xZoomedNow = xIsZoomed && !xWasZoomed;
-                    var yZoomedNow = yIsZoomed && !yWasZoomed;
-                    var isZoomed = xIsZoomed || yIsZoomed;
+                    var isZoomed = g.isZoomed();
                     for (i=0; i<dygraphs.length; i++) {
                         if (dygraphs[i] == g)
                             continue;
                         if (!isZoomed) {
-                            xWasZoomed = false;
-                            yWasZoomed = false;
                             dygraphs[i].resetZoom();
                         }
-                        else if (xZoomedNow) {
+                        else if (xrange[0] != oldxrange[0] 
+                              || xrange[1] != oldxrange[1]) {
                             console.log("x zoom " + xrange);
                             dygraphs[i].updateOptions( {
                                 dateWindow: xrange
                             } );
-                            xWasZoomed = true;
                         }
-                        else if (yZoomedNow) {
+                        else if (yrange[0] != oldyrange[0] 
+                              || yrange[1] != oldyrange[1]) {
                             console.log("y zoom " + yrange);
                             dygraphs[i].updateOptions( {
                                 valueRange: yrange
                             } );
-                            yWasZoomed = true;
                         }
+                        ra[0] = g.xAxisRange(); 
+                        ra[1] = g.yAxisRange();
                     }
                     blockCallback = false;
                 }
@@ -189,21 +189,9 @@ function drawSwitches(g)
 function handle_sync_cb()
 {
     cb = document.getElementById("synccb");
-   console.log( "handle_sync_cb(): synccb = " + cb );
-   console.trace();
     if( cb == null )
         return; // ignore if cb not created (because switches div still empty)
     syncZoom = cb.checked;
-   console.log( "handle_sync_cb(): syncZoom = " + syncZoom );
-//    if( cb.checked ) {
-//        syncobj = Dygraph.synchronize(dygraphs, {
-//            selection: false,
-//            zoom: true
-//        });
-//    } else {
-//        if (syncobj != null )
-//            syncobj.detach();
-//    }
 }
 
 function toggleAll()
