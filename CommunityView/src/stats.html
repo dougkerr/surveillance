@@ -32,6 +32,7 @@ dygraphs = [];
 gnames = [];
 data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 //syncobj = null;
+syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 xWasZoomed = false;
 yWasZoomed = false;
@@ -87,7 +88,7 @@ function dcgraph(dcdate, gindex)
                     drawSwitches(g);
                     handle_sync_cb();
                 }
-                else if (! blockCallback) {
+                else if (! blockCallback && syncZoom) { // handle zoom
                     blockCallback = true;
                     var xrange = g.xAxisRange();
                     var yrange = g.yAxisRange();
@@ -100,9 +101,9 @@ function dcgraph(dcdate, gindex)
                         if (dygraphs[i] == g)
                             continue;
                         if (!isZoomed) {
-                            dygraphs[i].resetZoom();
                             xWasZoomed = false;
                             yWasZoomed = false;
+                            dygraphs[i].resetZoom();
                         }
                         else if (xZoomedNow) {
                             console.log("x zoom " + xrange);
@@ -192,6 +193,8 @@ function handle_sync_cb()
    console.trace();
     if( cb == null )
         return; // ignore if cb not created (because switches div still empty)
+    syncZoom = cb.checked;
+   console.log( "handle_sync_cb(): syncZoom = " + syncZoom );
 //    if( cb.checked ) {
 //        syncobj = Dygraph.synchronize(dygraphs, {
 //            selection: false,
