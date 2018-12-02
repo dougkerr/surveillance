@@ -30,7 +30,9 @@ data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 ranges = [];
-dateMs = null;
+// indicates that we are in the process of syncing rolling avg values
+// across all graphs
+isSyncingRoll = false;
 
 function dcgraph(dcdate, gindex)
 {
@@ -75,14 +77,14 @@ function dcgraph(dcdate, gindex)
                 [false, false] : []),
 
             drawCallback: function(g, is_initial) {
-               console.log("drawCallback of " + g);
+                //console.log("drawCallback of " + g);
                 if( is_initial ) {
                     drawSwitches(g);
                     handle_sync_cb();
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
-                else if (blockCallback) {
+                else if (blockCallback || isSyncingRoll) {
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
@@ -154,31 +156,6 @@ function drawSwitches(g)
 
             sdiv.appendChild(document.createElement("br"));
         }
-        // button to toggle all switches
-        var all = document.createElement("input");
-        all.type = "button";
-        all.value = "All";
-        all.setAttribute("onclick", "toggleAll()");
-        sdiv.appendChild(all);
-
-        // sync checkbox
-        var synccb = document.createElement("input");
-        synccb.type = "checkbox";
-        synccb.id = "synccb";
-        synccb.checked = "true";
-        synccb.setAttribute("onchange", "handle_sync_cb()");
-        synccb.style = "margin-left:35px";  // distance from All button
-        sdiv.appendChild(synccb);
-
-        dcb = document.getElementById("synccb");
-
-        // sync checkbox label
-        cbl = document.createElement("label");
-        cbl.htmlFor = "synccb";
-        cbl.appendChild(document.createTextNode("Sync Zoom"));
-        sdiv.appendChild(cbl);
-
-        sdiv.appendChild(document.createElement("br"));
     }
 }
 
@@ -293,6 +270,17 @@ function react(e, value)
     }
 }
 
+function reactSyncRoll(e, value)
+{
+    if(e.keyCode==13) {
+        isSyncingRoll = true;
+        for (i=0; i<dygraphs.length; i++ ) {
+            dygraphs[i].adjustRoll(parseInt(value));
+        }
+        isSyncingRoll = false;
+    }
+}
+
 function formatDate(date) {
     var yyyy = date.getFullYear();
     var mm = date.getMonth()+1;
@@ -349,8 +337,22 @@ Date:
 <input id="date" type="text" size="8" onKeydown="react(event, this.value)">
 <input id="prev" type="button" value="<" onclick="handleDateButton(this)"/>
 <input id="next" type="button" value=">" onclick="handleDateButton(this)"/>
+
 <!-- make sure there are zero chars in the initial switches_div -->
 <div id="switches_div"></div>
+
+<!-- button to toggle all switches -->
+<input type="button" value="All" onclick="toggleAll()">
+
+<!-- Sync Zoom checkbox -->
+<input type="checkbox" id="synccb" checked="true" onchange="handle_sync_cb()"
+   style="margin-left:35px">
+<label for="synccb">Sync Zoom</label>
+
+<!-- Sync Rolling Avg textbox -->
+<label for="syncroll" style="margin-left:35px">Sync Rolling Avg</label>
+<input type="text" id="syncroll" size="2" value="10"
+    onkeydown="reactSyncRoll(event,this.value)">
 
 <script type="text/javascript" src="dygraph.js"></script>
 <script type="text/javascript" src="cameras.js"></script>
