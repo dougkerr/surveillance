@@ -34,8 +34,7 @@ ranges = [];
 // across all graphs
 isSyncingRoll = false;
 
-function dcgraph(dcdate, gindex)
-{
+function dcgraph(dcdate, gindex) {
     gname = gnames[gindex];
     dygraphs[gindex] = new Dygraph(
 
@@ -127,18 +126,15 @@ function dcgraph(dcdate, gindex)
     );
 }
 
-function drawSwitches(g)
-{
+function drawSwitches(g) {
     sdiv = document.getElementById("switches_div");
-    if ( sdiv.innerHTML.length == 0 ) // if switches div empty
-    {
+    if ( sdiv.innerHTML.length == 0 ) { // if switches div empty
         var l = g.getLabels();
         if (l.length == 1) {
             return; // leave the switches div empty if graph has no data file
         }
         var t = "";
-        for (i=1; i<l.length; i++)
-        {
+        for (i=1; i<l.length; i++) {
             // checkboxes
             cb = document.createElement("input");
             cb.type = "checkbox";
@@ -159,19 +155,16 @@ function drawSwitches(g)
     }
 }
 
-function handleSyncCb()
-{
+function handleSyncCb() {
     cb = document.getElementById("synccb");
     if( cb == null )
         return; // ignore if cb not created (because switches div still empty)
     syncZoom = cb.checked;
 }
 
-function toggleAll()
-{
+function toggleAll() {
     var newstate = ! document.getElementById("0").checked;
-    for( var i=0; i<dataColors.length; i++ )
-    {
+    for( var i=0; i<dataColors.length; i++ ) {
         document.getElementById(""+i).checked = newstate;
     }
     setVisFromSwitches();
@@ -180,34 +173,27 @@ function toggleAll()
 
 // return the state of the visibility switches as a boolean array
 // XXX should relate to number of switches rather than data colors
-function getVisSwitches()
-{
+function getVisSwitches() {
     var vis = [];
 
     // if the switches don't exist yet, set all visibilities to true
     sdiv = document.getElementById("switches_div");
-    if (sdiv.innerHTML.length == 0)
-    {
-        for( var i=0; i<dataColors.length; i++ )
-        {
+    if (sdiv.innerHTML.length == 0) {
+        for( var i=0; i<dataColors.length; i++ ) {
             vis[i] = true;
         }
     } else {
-        for( var i=0; i<dataColors.length; i++ )
-        {
+        for( var i=0; i<dataColors.length; i++ ) {
             vis[i] = document.getElementById(""+i).checked;
         }
     }
     return vis;
 }
 
-function setVisFromSwitches()
-{
+function setVisFromSwitches() {
     var vis = getVisSwitches();
-    for (var i=0; i<dygraphs.length; i++ )
-    {
-        for( var j=0; j<dataColors.length; j++)
-        {
+    for (var i=0; i<dygraphs.length; i++ ) {
+        for( var j=0; j<dataColors.length; j++) {
             dygraphs[i].setVisibility( j, vis[j] );
         }
     }
@@ -216,20 +202,16 @@ function setVisFromSwitches()
 
 // when a visibility checkbox is changed, this function is called to
 // set the corresponding data plot on each graph visible or hidden
-function handleVisCb(cb)
-{
+function handleVisCb(cb) {
     var cbn = parseInt(cb.id);
-    for( var i=0; i<gnames.length; i++ )
-    {
+    for( var i=0; i<gnames.length; i++ ) {
         dygraphs[i].setVisibility(cbn, cb.checked);
     }
 }
 
-function setUpDivs()
-{
+function setUpDivs() {
     var tab = document.createElement("table");
-    for (i=0; i<gnames.length; i++ )
-    {
+    for (i=0; i<gnames.length; i++ ) {
         var row = tab.insertRow(i);
 
         // graph area
@@ -253,25 +235,20 @@ function setUpDivs()
     document.body.appendChild(tab);
 }
 
-function drawgraphs(date)
-{
+function drawgraphs(date) {
     dygraphs = [];
-    for (i=0; i<gnames.length; i++ )
-    {
+    for (i=0; i<gnames.length; i++ ) {
         window.dcgraph(date, i);
     }
 }
 
-function react(e, value)
-{
-    if(e.keyCode==13)
-    {
+function react(e, value) {
+    if(e.keyCode==13) {
         drawgraphs(value)
     }
 }
 
-function reactSyncRoll(e, value)
-{
+function reactSyncRoll(e, value) {
     if(e.keyCode==13) {
         isSyncingRoll = true;
         for (i=0; i<dygraphs.length; i++ ) {
@@ -289,29 +266,25 @@ function formatDate(date) {
     return fmtDate;
 }
 
-function gettoday()
-{
+function gettoday() {
     return formatDate(new Date());
 }
 
-function twodigits(num)
-{
+function twodigits(num) {
     var s = num + "";
     if (s.length < 2)
             s = "0" + s;
     return s;
 }
 
-function drawtoday()
-{
+function drawtoday() {
     var date = gettoday();
     var e = document.getElementById("date");
     e.value = date;
     drawgraphs( date );
 }
 
-function drawfirsttime()
-{
+function drawfirsttime() {
     gnames = cameras.slice();
     gnames.push("ServerTotals");
     setUpDivs();
