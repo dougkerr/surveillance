@@ -30,7 +30,7 @@ dataColors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 ranges = [];
-// indicates that we are in the process of syncing rolling avg values
+// indicates that we are in the process of syncing the rolling avg value
 // across all graphs
 isSyncingRoll = false;
 
@@ -172,7 +172,6 @@ function toggleAll() {
 
 
 // return the state of the visibility switches as a boolean array
-// XXX should relate to number of switches rather than data colors
 function getVisSwitches() {
     var vis = [];
 
@@ -207,6 +206,19 @@ function handleVisCb(cb) {
     for( var i=0; i<gnames.length; i++ ) {
         dygraphs[i].setVisibility(cbn, cb.checked);
     }
+}
+
+function handleDateButton(b) {
+    // our standard date format (yyyy-mm-dd) is the ISO format and
+    // is interpreted by the Date constructor as UTC,
+    // whereas mm/dd/yyyy is interpreted as the local timezone :-P
+    var d = document.getElementById("date");
+    newdate = new Date(d.value.slice(5,7)+"/"+d.value.slice(8,10)
+                        +"/"+d.value.slice(0,4));
+
+    newdate.setDate(newdate.getDate() + (b.id=="next" ? 1 : -1));
+    d.value = formatDate(newdate);
+    drawgraphs(d.value);
 }
 
 function setUpDivs() {
@@ -266,10 +278,6 @@ function formatDate(date) {
     return fmtDate;
 }
 
-function gettoday() {
-    return formatDate(new Date());
-}
-
 function twodigits(num) {
     var s = num + "";
     if (s.length < 2)
@@ -277,30 +285,15 @@ function twodigits(num) {
     return s;
 }
 
-function drawtoday() {
-    var date = gettoday();
-    var e = document.getElementById("date");
-    e.value = date;
-    drawgraphs( date );
-}
-
 function drawfirsttime() {
     gnames = cameras.slice();
     gnames.push("ServerTotals");
     setUpDivs();
-    drawtoday();
-}
 
-function handleDateButton(b) {
-    // our standard date format (yyyy-mm-dd) is the ISO format and
-    // is interpreted as UTC, whereas mm/dd/yyyy is interpreted in
-    // local timezone :-P
+    var datestr = formatDate(new Date());
     var d = document.getElementById("date");
-    newdate = new Date(d.value.slice(5,7)+"/"+d.value.slice(8,10)
-                        +"/"+d.value.slice(0,4));
-    newdate.setDate(newdate.getDate() + (b.id=="next" ? 1 : -1));
-    d.value = formatDate(newdate);
-    drawgraphs(d.value);
+    d.value = datestr;
+    drawgraphs( datestr );
 }
 
 </script>
