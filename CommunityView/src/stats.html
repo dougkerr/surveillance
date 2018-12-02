@@ -23,14 +23,10 @@
 -->
 <html>
 <head>
-<script type="text/javascript" src="dygraph.js"></script>
-<script type="text/javascript" src="cameras.js"></script>
-<link rel="stylesheet" href="dygraph.css" />
 <script type="text/javascript">
 dygraphs = [];
 gnames = [];
 data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
-//syncobj = null;
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 ranges = [];
@@ -174,7 +170,6 @@ function drawSwitches(g)
         sdiv.appendChild(synccb);
 
         dcb = document.getElementById("synccb");
-        console.log( "drawSwitches(): after synccb created, cb = " + dcb );
 
         // sync checkbox label
         cbl = document.createElement("label");
@@ -241,7 +236,6 @@ function setVisFromSwitches()
 }
 
 
-// XXX
 // when a visibility checkbox is changed, this function is called to
 // set the corresponding data plot on each graph visible or hidden
 function vis_cb_chg(cb)
@@ -252,8 +246,7 @@ function vis_cb_chg(cb)
         dygraphs[i].setVisibility(cbn, cb.checked);
     }
 }
-</script>
-<script type="text/javascript">
+
 function set_up_divs()
 {
     var tab = document.createElement("table");
@@ -285,16 +278,10 @@ function set_up_divs()
 function drawgraphs(date)
 {
     dygraphs = [];
-    xWasZoomed = false;
-    yWasZoomed = false;
     for (i=0; i<gnames.length; i++ )
     {
         window.dcgraph(date, i);
-       console.log( "drawgraphs(): getLabels ["+i+"] = " + dygraphs[i].getLabels() );
     }
-   cb = document.getElementById("synccb");
-   console.log( "drawgraphs(): synccb = " + cb );
-   console.trace();
 }
 
 function react(e, value)
@@ -305,8 +292,6 @@ function react(e, value)
     }
 }
 
-</script>
-<script>
 function gettoday()
 {
     var today = new Date();
@@ -349,5 +334,8 @@ Date:
 <!-- make sure there are zero chars in the initial switches_div -->
 <div id="switches_div"></div>
 
+<script type="text/javascript" src="dygraph.js"></script>
+<script type="text/javascript" src="cameras.js"></script>
+<link rel="stylesheet" href="dygraph.css" />
 </body>
 </html>
