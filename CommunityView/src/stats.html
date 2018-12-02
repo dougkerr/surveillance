@@ -30,6 +30,7 @@ data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 ranges = [];
+dateMs = null;
 
 function dcgraph(dcdate, gindex)
 {
@@ -292,14 +293,17 @@ function react(e, value)
     }
 }
 
+function formatDate(date) {
+    var yyyy = date.getFullYear();
+    var mm = date.getMonth()+1;
+    var dd = date.getDate();
+    var fmtDate = yyyy + "-" + twodigits(mm) + "-" + twodigits(dd);
+    return fmtDate;
+}
+
 function gettoday()
 {
-    var today = new Date();
-    var yyyy = today.getFullYear();
-    var mm = today.getMonth()+1;
-    var dd = today.getDate();
-    var date = yyyy + "-" + twodigits(mm) + "-" + twodigits(dd);
-    return date;
+    return formatDate(new Date());
 }
 
 function twodigits(num)
@@ -325,12 +329,26 @@ function drawfirsttime()
     set_up_divs();
     drawtoday();
 }
-	
+
+function handleDateButton(b) {
+    // our standard date format (yyyy-mm-dd) is the ISO format and
+    // is interpreted as UTC, whereas mm/dd/yyyy is interpreted in
+    // local timezone :-P
+    var d = document.getElementById("date");
+    newdate = new Date(d.value.slice(5,7)+"/"+d.value.slice(8,10)
+                        +"/"+d.value.slice(0,4));
+    newdate.setDate(newdate.getDate() + (b.id=="next" ? 1 : -1));
+    d.value = formatDate(newdate);
+    drawgraphs(d.value);
+}
+
 </script>
 </head>
 <body onload="drawfirsttime()">
 Date:
 <input id="date" type="text" size="8" onKeydown="react(event, this.value)">
+<input id="prev" type="button" value="<" onclick="handleDateButton(this)"/>
+<input id="next" type="button" value=">" onclick="handleDateButton(this)"/>
 <!-- make sure there are zero chars in the initial switches_div -->
 <div id="switches_div"></div>
 
