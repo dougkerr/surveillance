@@ -26,7 +26,7 @@
 <script type="text/javascript">
 dygraphs = [];
 gnames = [];
-data_colors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
+dataColors = ["green", "cyan", "blue", "purple", "magenta", "red", "orange"];
 syncZoom = true;    // driven by Sync Zoom checkbox
 blockCallback = false;
 ranges = [];
@@ -52,7 +52,7 @@ function dcgraph(dcdate, gindex)
             showRoller: true,
             labelsSeparateLines: true,
             labelsDiv: gname+"_l_div",
-            colors: data_colors,
+            colors: dataColors,
             series : {
                 "Today's Unprocessed Images":{
                     axis: "y2"
@@ -76,11 +76,11 @@ function dcgraph(dcdate, gindex)
             visibility: getVisSwitches().concat(gname=="ServerTotals" ?
                 [false, false] : []),
 
-            drawCallback: function(g, is_initial) {
+            drawCallback: function(g, isInitial) {
                 //console.log("drawCallback of " + g);
-                if( is_initial ) {
+                if( isInitial ) {
                     drawSwitches(g);
-                    handle_sync_cb();
+                    handleSyncCb();
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
@@ -104,14 +104,14 @@ function dcgraph(dcdate, gindex)
                         }
                         else if (xrange[0] != oldxrange[0] 
                               || xrange[1] != oldxrange[1]) {
-                            console.log("x zoom " + xrange);
+                            //console.log("x zoom " + xrange);
                             dygraphs[i].updateOptions( {
                                 dateWindow: xrange
                             } );
                         }
                         else if (yrange[0] != oldyrange[0] 
                               || yrange[1] != oldyrange[1]) {
-                            console.log("y zoom " + yrange);
+                            //console.log("y zoom " + yrange);
                             dygraphs[i].updateOptions( {
                                 valueRange: yrange
                             } );
@@ -144,12 +144,12 @@ function drawSwitches(g)
             cb.type = "checkbox";
             cb.id = "" + (i-1); // graph data series number
             cb.checked = true;
-            cb.setAttribute("onchange", "vis_cb_chg(this)");
+            cb.setAttribute("onchange", "handleVisCb(this)");
             sdiv.appendChild(cb);
 
             // checkbox labels
             cbl = document.createElement("label");
-            cbl.style = "color:" + data_colors[i-1];
+            cbl.style = "color:" + dataColors[i-1];
             cbl.htmlFor = "" + (i-1);
             cbl.appendChild(document.createTextNode(l[i]));
             sdiv.appendChild(cbl);
@@ -159,7 +159,7 @@ function drawSwitches(g)
     }
 }
 
-function handle_sync_cb()
+function handleSyncCb()
 {
     cb = document.getElementById("synccb");
     if( cb == null )
@@ -170,7 +170,7 @@ function handle_sync_cb()
 function toggleAll()
 {
     var newstate = ! document.getElementById("0").checked;
-    for( var i=0; i<data_colors.length; i++ )
+    for( var i=0; i<dataColors.length; i++ )
     {
         document.getElementById(""+i).checked = newstate;
     }
@@ -188,12 +188,12 @@ function getVisSwitches()
     sdiv = document.getElementById("switches_div");
     if (sdiv.innerHTML.length == 0)
     {
-        for( var i=0; i<data_colors.length; i++ )
+        for( var i=0; i<dataColors.length; i++ )
         {
             vis[i] = true;
         }
     } else {
-        for( var i=0; i<data_colors.length; i++ )
+        for( var i=0; i<dataColors.length; i++ )
         {
             vis[i] = document.getElementById(""+i).checked;
         }
@@ -206,7 +206,7 @@ function setVisFromSwitches()
     var vis = getVisSwitches();
     for (var i=0; i<dygraphs.length; i++ )
     {
-        for( var j=0; j<data_colors.length; j++)
+        for( var j=0; j<dataColors.length; j++)
         {
             dygraphs[i].setVisibility( j, vis[j] );
         }
@@ -216,7 +216,7 @@ function setVisFromSwitches()
 
 // when a visibility checkbox is changed, this function is called to
 // set the corresponding data plot on each graph visible or hidden
-function vis_cb_chg(cb)
+function handleVisCb(cb)
 {
     var cbn = parseInt(cb.id);
     for( var i=0; i<gnames.length; i++ )
@@ -225,7 +225,7 @@ function vis_cb_chg(cb)
     }
 }
 
-function set_up_divs()
+function setUpDivs()
 {
     var tab = document.createElement("table");
     for (i=0; i<gnames.length; i++ )
@@ -314,7 +314,7 @@ function drawfirsttime()
 {
     gnames = cameras.slice();
     gnames.push("ServerTotals");
-    set_up_divs();
+    setUpDivs();
     drawtoday();
 }
 
@@ -345,7 +345,7 @@ Date:
 <input type="button" value="All" onclick="toggleAll()">
 
 <!-- Sync Zoom checkbox -->
-<input type="checkbox" id="synccb" checked="true" onchange="handle_sync_cb()"
+<input type="checkbox" id="synccb" checked="true" onchange="handleSyncCb()"
    style="margin-left:35px">
 <label for="synccb">Sync Zoom</label>
 
