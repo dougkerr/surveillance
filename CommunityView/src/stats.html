@@ -33,6 +33,9 @@ ranges = [];
 // indicates that we are in the process of syncing the rolling avg value
 // across all graphs
 isSyncingRoll = false;
+// indicates that we are in the process of setting the visibility of data
+// series across all graphs
+isSettingVis = false;
 
 function dcgraph(dcdate, gindex) {
     gname = gnames[gindex];
@@ -83,10 +86,12 @@ function dcgraph(dcdate, gindex) {
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
-                else if (blockCallback || isSyncingRoll) {
+                else if (blockCallback || isSyncingRoll || isSettingVis) {
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
+                // the intent of the preceding tests is that we should
+                // only get here if the callback is due to a zoom event
                 else if (syncZoom) {
                     blockCallback = true;
                     var ra = ranges[g.getOption("title")];
@@ -191,11 +196,13 @@ function getVisSwitches() {
 
 function setVisFromSwitches() {
     var vis = getVisSwitches();
+    isSettingVis = true;
     for (var i=0; i<dygraphs.length; i++ ) {
         for( var j=0; j<dataColors.length; j++) {
             dygraphs[i].setVisibility( j, vis[j] );
         }
     }
+    isSettingVis = false;
 }
 
 
@@ -203,9 +210,11 @@ function setVisFromSwitches() {
 // set the corresponding data plot on each graph visible or hidden
 function handleVisCb(cb) {
     var cbn = parseInt(cb.id);
+    isSettingVis = true;
     for( var i=0; i<gnames.length; i++ ) {
         dygraphs[i].setVisibility(cbn, cb.checked);
     }
+    isSettingVis = false;
 }
 
 function handleDateButton(b) {
