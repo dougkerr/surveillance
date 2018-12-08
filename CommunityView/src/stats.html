@@ -87,6 +87,8 @@ function dcgraph(dcdate, gindex) {
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
                 else if (blockCallback || isSyncingRoll || isSettingVis) {
+                    //console.log("blocked callback: graph "+g+", xAxisRange: "
+                    //  +g.xAxisRange()+", yAxisRange: "+g.yAxisRange());
                     ranges[g.getOption("title")]
                         = [g.xAxisRange(), g.yAxisRange()];
                 }
@@ -100,6 +102,7 @@ function dcgraph(dcdate, gindex) {
                     var xrange = g.xAxisRange();
                     var yrange = g.yAxisRange();
                     var isZoomed = g.isZoomed();
+                    //console.log("Zoom event: graph: "+g);
                     for (i=0; i<dygraphs.length; i++) {
                         if (dygraphs[i] == g)
                             continue;
@@ -108,14 +111,14 @@ function dcgraph(dcdate, gindex) {
                         }
                         else if (xrange[0] != oldxrange[0] 
                               || xrange[1] != oldxrange[1]) {
-                            //console.log("x zoom " + xrange);
+                            //console.log("graph "+i+": set x zoom " + xrange);
                             dygraphs[i].updateOptions( {
                                 dateWindow: xrange
                             } );
                         }
                         else if (yrange[0] != oldyrange[0] 
                               || yrange[1] != oldyrange[1]) {
-                            //console.log("y zoom " + yrange);
+                            //console.log("graph "+i+": set y zoom " + yrange);
                             dygraphs[i].updateOptions( {
                                 valueRange: yrange
                             } );
