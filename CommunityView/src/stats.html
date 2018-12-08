@@ -50,7 +50,7 @@ function dcgraph(dcdate, gindex) {
             xlabel: "Time",
             ylabel: "Images/Min & Latency (Min)",
             y2label: "Unprocessed Images",
-            rollPeriod: 10,
+            rollPeriod: parseInt(document.getElementById("syncroll").value),
             showRoller: true,
             labelsSeparateLines: true,
             labelsDiv: gname+"_l_div",
