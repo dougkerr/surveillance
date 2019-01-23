@@ -39,11 +39,12 @@ the disk storage are necessary.
 #### Mounting a Volume on AWS
 
 If your server is running on Amazon Web Services (AWS) or another hosting 
-service with multiple grades of storage having different pricing and performance
-characteristics, you may wish to use a lower-cost (and lower performance)
+service with multiple grades of storage having different pricing and/or 
+performance characteristics, 
+you may wish to use a lower-cost (and lower performance)
 volume for images than for your root volume.
 
-For example, on AWS
+On AWS
 we have had success using an ST1 volume to store the CommunityView
 images and web pages, while running the root filesystem on GP2 storage.
 ST1 storage is currently slightly less than half the cost per gigabyte-month
@@ -54,13 +55,16 @@ volumes are listed here:
 The process of mounting an attached volume under Linux on AWS is described
 here:
 [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html).
+Note that on a fresh Linux installation, the directory `www` may not exist
+and will need to be created before you can use `/var/www` as a mount point.
 
 If you are using an ST1 or SC1 volume for image storage,
 it is _very_ important to increase the
 kernel read-ahead buffer space as described in this article:
 [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSPerformance.html#read_ahead](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSPerformance.html#read_ahead).
 
-**N.B.:** The command described above changes the kernel buffering only until 
+**N.B.:** The command described in the article above changes the read-ahead
+buffering only until 
 the system is rebooted.  Then, the buffering returns to the default setting.
 A simple way to make this change permanent is to edit
 `/etc/rc.local`, and add the command to the end of the file.
@@ -68,7 +72,8 @@ This will cause the command to be executed each time the system is rebooted.
 
 ### 3. Download the CommunityView Software
 
-Use the following command to download a ZIP archive of the CommunityView
+Log into the server and 
+use the following command to download a ZIP archive of the CommunityView
 software from GitHub:
 
     wget https://github.com/NeighborhoodGuard/communityview/archive/master.zip
@@ -101,7 +106,7 @@ The configuration items are of the form,
 To assign a new value to a particular named configuration item, 
 you must change the _value_ portion of the line.  For example, to change 
 the number of days that the  uploaded images will be retained on the server 
-from 21 to 14, you would change the configuration line:
+from 21 to 30, you would change the configuration line:
 
     retain_days=21
 to:
@@ -156,13 +161,13 @@ sending images to the server.
 The configuration item name for each camera line is in the form:
 
 >
-> camera_N_
+> camera*N*
 >
 
 where _N_ is a number from 1 up to the number of cameras in your system.
 The value part of each camera configuration line (the part that follows the
 `=` sign) consists of the short name
-(which contains no spaces) followed by a space the long name.  The long name
+(which contains no spaces) followed by a space and the long name.  The long name
 may contain spaces.
 
 For example, if the first camera's short name is "1138parkst"

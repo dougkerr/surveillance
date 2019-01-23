@@ -11,6 +11,8 @@ all other required software, on a dedicated server.
 caused both threads to try to process the same images files, resulting
 in "No such file" errors.
 - Add performance graphs.
+- Add built-in mechanism to manage user names and passwords
+for Basic Authentication.
 
 ### Minor Changes
 
@@ -18,6 +20,12 @@ in "No such file" errors.
 - Improve logging of failure when cropping images.
 - Update installation documentation for new installation procedure and
 installation on AWS.
+
+### To Do
+
+* Move sequence-page navigation to top of page.
+* Add UI link to source code.
+* Add graceful shutdown.
 
 ### Known Issues
 
