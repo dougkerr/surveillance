@@ -26,6 +26,7 @@ installation on AWS.
 * Move sequence-page navigation to top of page.
 * Add UI link to source code.
 * Add graceful shutdown.
+* Update communityview.py to use config file
 
 ### Known Issues
 

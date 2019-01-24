@@ -175,7 +175,7 @@ and the long name is "1138 Park Street", the entry would be,
 
     camera1=1138parkst 1138 Park Street
 
-If there are three cameras, the configuration lines night look something like
+If there are three cameras, the configuration lines might look something like
 this:
 
     camera1=1138parkst 1138 Park Street
