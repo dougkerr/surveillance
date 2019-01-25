@@ -29,6 +29,18 @@ There are many tutorials and guides to installing the Ubuntu server software
 on the Web.  Search for "install ubuntu server 16.04" using your favorite
 search engine to find them.  The official Ubuntu tutorial is here: [https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-server-1604](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-server-1604).
 
+After installing a fresh Ubuntu Server 16.04 (or any Linux system), 
+it's a good idea
+to bring the system up to date with the latest system software.
+To do this, log into the server and execute the following two commands:
+
+    sudo apt-get update
+    sudo apt-get upgrade
+
+Note that the `upgrade` process can take anywhere from a couple minutes to
+more than a half hour depending on how recently the Linux image you installed
+from was created, and the speed of the machine.
+
 ### 2. Configure Your Machine with Appropriate Disk Storage
 
 The CommunityView software stores uploaded images and processed web pages under
@@ -78,7 +90,11 @@ software from GitHub:
 
     wget https://github.com/NeighborhoodGuard/communityview/archive/master.zip
     
-Extract the files in the ZIP archive with this command:
+Install the `unzip` program using the following command:
+
+    sudo apt install unzip
+
+Then, extract the files in the downloaded ZIP archive with this command:
 
     unzip master.zip
 
@@ -200,7 +216,22 @@ run the `confcvserver.sh` script as root by issuing the following command:
 This will install and configure all the software required
 to implement your CommunityView server.
 
-If the script encounters errors, examine the error messages and edit the
-cvserver.conf file as appropriate.  If you cannot determine the cause of an
+At the end of the installation process, the script will create a private key
+for the upload user account (the account
+named in the `up_user` configuration line above), 
+if one does not already exist.
+The installation script will place the key file in the current directory
+and print an informational message to that effect.
+If your upload machine authenticates itself to the CommunityView server
+via Public Key authentication, use this key as the upload machine's
+private key.  If not, you can ignore this message.
+
+After running the script, if you find you need to change any of the 
+configuration items, simply edit the configuration file and run the script
+again.
+
+If the script encounters errors, examine the error messages, edit the
+cvserver.conf file as appropriate, then re-run the `confcvserver.sh`
+script.  If you cannot determine the cause of an
 error and are a member of Neighborhood Guard, please contact one of the
 Neighborhood Guard board members for assistance.
