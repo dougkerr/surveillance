@@ -24,7 +24,7 @@
 # If kswapd0 uses over 10% of the CPU, reboot.
 # Check every ten minutes.
 
-logfile=/var/opt/communityview/kswapd0hack.log
+logfile=/var/opt/communityview/log/kswapd0hack.log
 
 ckcpu() {
     kspct=`ps -C kswapd0 -o '%cpu' --no-header`
@@ -53,7 +53,7 @@ ckcpu() {
     fi
 }
 
-if [ ! UNIT_TEST_IN_PROGRESS ]
+if [ ! "$UNIT_TEST_IN_PROGRESS" ]
 then
     while true
     do
