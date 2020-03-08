@@ -28,7 +28,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/var/opt/communityview/log
-ExecStart=/bin/sh /opt/communityview/kswapd0hack.sh
+ExecStart=/bin/sh /opt/communityview/kswapd0hack
 Restart=always
 
 [Install]

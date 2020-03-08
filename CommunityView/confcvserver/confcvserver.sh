@@ -52,7 +52,7 @@ config_dir=/etc/opt/communityview # XXX future use
 var_dir=/var/opt/communityview
 log_dir=$var_dir/log
 systemd_dir=/lib/systemd/system
-kswapd0hack_code_dir=/opt/communityview/kswapd0hack
+kswapd0hack_code_dir=/opt/communityview
 
 # log file for this script
 scriptlog=confcvserver.log
@@ -464,7 +464,7 @@ configure() {
     tgt=$systemd_dir/$name.service
     rm -f "$tgt"
     cp $our_dir/../$name/$name.service "$tgt"
-    chmod 755 "$tgt"
+    chmod 644 "$tgt"
     chown root:root "$tgt"
     tgt="$kswapd0hack_code_dir"/$name
     mk_dir "$kswapd0hack_code_dir"
